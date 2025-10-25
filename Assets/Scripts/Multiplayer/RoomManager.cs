@@ -6,6 +6,8 @@ public class RoomManager : MonoBehaviourPunCallbacks
     public GameObject player;
     [Space]
     public Transform spawnPoint;
+    [Space]
+    public GameObject roomCam;
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
@@ -40,6 +42,8 @@ public class RoomManager : MonoBehaviourPunCallbacks
         base.OnJoinedRoom();
 
         Debug.Log("Joined room!");
+
+        roomCam.SetActive(false);
 
         GameObject _player = PhotonNetwork.Instantiate(player.name, spawnPoint.position, Quaternion.identity);
         _player.GetComponent<PlayerSetup>().IsLocalPlayer();
