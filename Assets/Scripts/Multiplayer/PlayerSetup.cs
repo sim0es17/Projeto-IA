@@ -1,3 +1,5 @@
+using Photon.Pun;
+using TMPro;
 using UnityEngine;
 
 public class PlayerSetup : MonoBehaviour
@@ -6,8 +8,11 @@ public class PlayerSetup : MonoBehaviour
 
     public GameObject camara;
 
-    public CombatSystem2D combat; 
+    public CombatSystem2D combat;
 
+    public string nickname;
+
+    public TextMeshPro nicknameText;
 
     public void IsLocalPlayer()
     {
@@ -17,5 +22,13 @@ public class PlayerSetup : MonoBehaviour
         // Enable combat system for the local player only
         if (combat != null)
             combat.enabled = true;
+    }
+
+    [PunRPC]
+    public void SetNickname(string _nickname)
+    {
+        nickname = _nickname;
+
+        nicknameText.text = nickname;
     }
 }
