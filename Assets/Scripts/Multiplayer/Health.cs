@@ -6,8 +6,9 @@ public class Health : MonoBehaviourPunCallbacks
 {
     [Header("Vida")]
     public int health;
+    public bool isLocalPlayer;
 
-    [Header("UI (opcional)")]
+    [Header("UI")]
     public TextMeshProUGUI healthText;
 
     void Start()
@@ -28,6 +29,9 @@ public class Health : MonoBehaviourPunCallbacks
 
         if (health <= 0)
         {
+            if (isLocalPlayer)
+                RoomManager.instance.RespawnPlayer();
+
             Debug.Log($"{gameObject.name} morreu!");
 
             PhotonView view = GetComponent<PhotonView>();
