@@ -7,7 +7,7 @@ public class MenuController : MonoBehaviour
     public void StartGame()
     {
         SceneManager.LoadScene("MainScene");
-        // ⚠️ Confirma que "MainScene" é exatamente o nome da tua cena de jogo
+        // Confirma que "MainScene" é exatamente o nome da tua cena de jogo
     }
 
     // Função chamada ao clicar no botão "Sair"
