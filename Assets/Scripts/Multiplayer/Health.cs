@@ -2,6 +2,7 @@ using UnityEngine;
 using Photon.Pun;
 using TMPro;
 using ExitGames.Client.Photon;
+using UnityEngine;
 
 public class Health : MonoBehaviourPunCallbacks
 {
@@ -9,19 +10,34 @@ public class Health : MonoBehaviourPunCallbacks
     public int health = 100;
     public bool isLocalPlayer;
 
+    public RectTransform healthBar;
+    private float originalHealthBarsize;
+
     [Header("UI")]
     public TextMeshProUGUI healthText;
 
-    void Start()
+    private void Start()
+    {
+        originalHealthBarsize = healthBar.sizeDelta.x;
+    }
+
+    private void Update()
+    {
+        //healthBar.sizeDelta = new Vector2(originalHealthBarsize * health / 100f, healthBar.sizeDelta.y);
+    }
+
+    /*void Start()
     {
         if (healthText != null)
             healthText.text = health.ToString();
-    }
+    }*/
 
     [PunRPC]
     public void TakeDamage(int _damage, int attackerViewID = -1)
     {
         health -= _damage;
+
+        healthBar.sizeDelta = new Vector2(originalHealthBarsize * health / 100f, healthBar.sizeDelta.y);
 
         if (healthText != null)
             healthText.text = health.ToString();
