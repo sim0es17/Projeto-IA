@@ -47,14 +47,22 @@ public class Leaderboard : MonoBehaviour
             nameTexts[i].text = player.NickName;
             scoreTexts[i].text = player.GetScore().ToString();
 
-            if (player.CustomProperties["Kills"] != null)
+            // Pega as Kills, ou 0 se não existir
+            int kills = 0;
+            if (player.CustomProperties.ContainsKey("Kills"))
             {
-                kdTexts[i].text = player.CustomProperties["Kills"] + "/" + player.CustomProperties["Deaths"];
+                kills = (int)player.CustomProperties["Kills"];
             }
-            else
+
+            // Pega as Deaths, ou 0 se não existir
+            int deaths = 0;
+            if (player.CustomProperties.ContainsKey("Deaths"))
             {
-                kdTexts[i].text = "0/0";
+                deaths = (int)player.CustomProperties["Deaths"];
             }
+
+            // Mostra os valores
+            kdTexts[i].text = kills + "/" + deaths;
 
             i++;
         }

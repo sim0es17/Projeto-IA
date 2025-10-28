@@ -12,7 +12,7 @@ public class Movement2D : MonoBehaviour
     public int maxJumps;
 
     [Header("Ground Check")]
-    public Transform groundCheck;          // empty object nos pés
+    public Transform groundCheck;
     public float groundCheckDistance;
     public LayerMask groundLayer;
 
@@ -21,9 +21,14 @@ public class Movement2D : MonoBehaviour
     private bool grounded;
     private int jumpCount;
 
+
+    private CombatSystem2D combatSystem;
+
     void Start()
     {
         rb = GetComponent<Rigidbody2D>();
+
+        combatSystem = GetComponent<CombatSystem2D>();
 
         if (groundCheck == null)
             Debug.LogWarning("GroundCheck não atribuído no inspector!");
@@ -31,6 +36,15 @@ public class Movement2D : MonoBehaviour
 
     void Update()
     {
+        // Se estiver a defender, para o movimento horizontal e ignora o resto da função.
+        if (combatSystem != null && combatSystem.isDefending)
+        {
+            // Força a paragem horizontal (mas deixa a gravidade atuar)
+            rb.linearVelocity = new Vector2(0f, rb.linearVelocity.y);
+            return; // Impede a leitura de inputs de movimento e pulo
+        }
+
+
         // Movimento horizontal
         float move = Input.GetAxis("Horizontal");
         sprinting = Input.GetKey(KeyCode.LeftShift);
