@@ -20,12 +20,12 @@ public class RoomManager : MonoBehaviourPunCallbacks
     public GameObject nameUI;
     public GameObject connectigUI;
 
-    public string roomNameToJoin = "test";
-
     [HideInInspector]
     public int kills = 0;
     [HideInInspector]
     public int deaths = 0;
+
+    public string roomNameToJoin = "Noname";
 
     void Awake()
     {
@@ -41,36 +41,10 @@ public class RoomManager : MonoBehaviourPunCallbacks
     {
         Debug.Log("Connecting...");
 
-        PhotonNetwork.ConnectUsingSettings();
+        PhotonNetwork.JoinOrCreateRoom(roomNameToJoin, new Photon.Realtime.RoomOptions { MaxPlayers = 4 }, null);
 
         nameUI.SetActive(false);
         connectigUI.SetActive(true);
-    }
-
-    // Start is called once before the first execution of Update after the MonoBehaviour is created
-    void Start()
-    {
-        
-    }
-
-    public override void OnConnectedToMaster()
-    {
-        base.OnConnectedToMaster();
-
-        Debug.Log("Connected to Server");
-
-        PhotonNetwork.JoinLobby();
-    }
-
-    public override void OnJoinedLobby()
-    {
-        base.OnJoinedLobby();
-
-        PhotonNetwork.JoinOrCreateRoom("test", null, null);
-
-        Debug.Log("We're connected and in a room!");
-
-        //GameObject _player = PhotonNetwork.Instantiate(player.name, spawnPoint.position, Quaternion.identity);
     }
 
     public override void OnJoinedRoom()
