@@ -53,6 +53,8 @@ public class TGRoomManager : MonoBehaviourPunCallbacks
 
         Debug.Log("Player has joined the Training Ground");
 
+        tgRoomCam.SetActive(false);
+
         RespawnPlayer();
     }
 
