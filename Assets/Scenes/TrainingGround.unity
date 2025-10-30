@@ -391,7 +391,11 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   player: {fileID: 61911978259195691, guid: cd1776699e7303a4d8fd3bcc0063242e, type: 3}
-  spawnPoint: {fileID: 1111065849}
+  spawnPoints:
+  - {fileID: 1111065849}
+  - {fileID: 206189131}
+  - {fileID: 2091161267}
+  - {fileID: 640034592}
   tgRoomCam: {fileID: 1740361282}
 --- !u!4 &465664767
 Transform:
