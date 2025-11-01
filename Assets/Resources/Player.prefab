@@ -13,13 +13,13 @@ GameObject:
   - component: {fileID: 5215984225767055963}
   - component: {fileID: 1498461157692663133}
   - component: {fileID: 788247720233381919}
-  - component: {fileID: 5176302653188618620}
-  - component: {fileID: 1033742948267064829}
+  - component: {fileID: 2584163000363952506}
+  - component: {fileID: 3548697139772030856}
   - component: {fileID: 8401734005627533140}
   - component: {fileID: 4529615232168054896}
   - component: {fileID: 3538730646336838822}
-  - component: {fileID: 5141904489402564264}
-  - component: {fileID: 8264976849520301598}
+  - component: {fileID: 3533807659994901797}
+  - component: {fileID: 5797720257916456991}
   m_Layer: 7
   m_Name: Player
   m_TagString: Untagged
@@ -195,7 +195,7 @@ MonoBehaviour:
   m_DefaultActionMap: Player
   m_SplitScreenIndex: -1
   m_Camera: {fileID: 0}
---- !u!114 &5176302653188618620
+--- !u!114 &2584163000363952506
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -216,7 +216,7 @@ MonoBehaviour:
   groundLayer:
     serializedVersion: 2
     m_Bits: 8
---- !u!114 &1033742948267064829
+--- !u!114 &3548697139772030856
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -294,7 +294,7 @@ MonoBehaviour:
   m_SynchronizeRotation: 1
   m_SynchronizeScale: 0
   m_UseLocal: 1
---- !u!114 &5141904489402564264
+--- !u!114 &3533807659994901797
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -306,12 +306,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8b57f5b15ca94e347aa9c99e8efa5a9c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  movement: {fileID: 5176302653188618620}
+  movement: {fileID: 2584163000363952506}
   camara: {fileID: 2230336388305368168}
-  combat: {fileID: 1033742948267064829}
+  combat: {fileID: 3548697139772030856}
   nickname: 
   nicknameText: {fileID: 6320472677972034373}
---- !u!114 &8264976849520301598
+--- !u!114 &5797720257916456991
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}

@@ -8,6 +8,21 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Scenes/Multiplayer.unity
     guid: 8c9cfa26abfee488c85f1582747f6a02
+  - enabled: 1
+    path: Assets/Scenes/MainMenu.unity
+    guid: 2b7f45adabdfe764086675d55f4bd9e1
+  - enabled: 1
+    path: Assets/Scenes/CharacterSelect.unity
+    guid: f571a8c9464117745bef5b8a95fb94ae
+  - enabled: 1
+    path: Assets/Scenes/ArenaSelect.unity
+    guid: 7bb982ea04a52e943b7c43bdd2869846
+  - enabled: 1
+    path: Assets/Scenes/TrainingGround.unity
+    guid: e1b0a0b8c9afbcb4c9b5a88768e9b71f
+  - enabled: 1
+    path: Assets/Scenes/TrainingModeMenu.unity
+    guid: 7b3ac3940b1d70e4dae2a87511df7483
   m_configObjects:
     com.unity.input.settings: {fileID: 11400000, guid: e5f630ddf5c12fd41b0f77b48b33ecad, type: 2}
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 2bcd2660ca9b64942af0de543d8d7100, type: 3}
