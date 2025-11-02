@@ -1,4 +1,4 @@
-using System.Collections; 
+using System.Collections;
 using UnityEngine;
 using Photon.Pun;
 using TMPro;
@@ -14,18 +14,20 @@ public class Health : MonoBehaviourPunCallbacks
     private float originalHealthBarsize;
 
     [Header("Knockback")]
-    public float knockbackForce; 
-    public float knockbackDuration; 
+    public float knockbackForce;
+    public float knockbackDuration;
     private Rigidbody2D rb;
-    private Movement2D playerMovement; 
+    private Movement2D playerMovement;
 
     [Header("UI")]
     public TextMeshProUGUI healthText;
 
+    private bool isDead = false; // <-- Manter esta flag. É importante.
+
     private void Awake()
     {
         rb = GetComponent<Rigidbody2D>();
-        playerMovement = GetComponent<Movement2D>(); 
+        playerMovement = GetComponent<Movement2D>();
     }
 
     private void Start()
@@ -67,6 +69,8 @@ public class Health : MonoBehaviourPunCallbacks
     [PunRPC]
     public void TakeDamage(int _damage, int attackerViewID = -1)
     {
+        if (isDead) return; // Se já estiver morto, ignora dano adicional
+
         health -= _damage;
 
         healthBar.sizeDelta = new Vector2(originalHealthBarsize * health / 100f, healthBar.sizeDelta.y);
@@ -90,11 +94,13 @@ public class Health : MonoBehaviourPunCallbacks
 
         if (health <= 0)
         {
+            isDead = true; // Marca como morto imediatamente
             Debug.Log($"{gameObject.name} morreu!");
 
-            // Atualiza deaths do jogador local
-            if (isLocalPlayer)
+            // Atualiza deaths E notifica o atacante (APENAS O CLIENTE LOCAL)
+            if (isLocalPlayer) // ou podes usar if (photonView.IsMine)
             {
+                // 1. Contar a MORTE (Death)
                 int currentDeaths = 0;
                 if (PhotonNetwork.LocalPlayer.CustomProperties.ContainsKey("Deaths"))
                     currentDeaths = (int)PhotonNetwork.LocalPlayer.CustomProperties["Deaths"];
@@ -103,20 +109,20 @@ public class Health : MonoBehaviourPunCallbacks
                 ExitGames.Client.Photon.Hashtable props = new ExitGames.Client.Photon.Hashtable { { "Deaths", currentDeaths } };
                 PhotonNetwork.LocalPlayer.SetCustomProperties(props);
 
-                // Se você tiver um RoomManager, descomente esta linha:
+                // 2. Fazer Respawn
                 if (RoomManager.instance != null)
-                     RoomManager.instance.RespawnPlayer();
-            }
+                    RoomManager.instance.RespawnPlayer();
 
-            // Notifica o atacante (lógica de KillConfirmed)
-            if (attackerViewID != -1)
-            {
-                PhotonView attackerView = PhotonView.Find(attackerViewID);
-                if (attackerView != null)
+                // 3. Notificar o atacante (LÓGICA MOVIDA PARA AQUI)
+                if (attackerViewID != -1)
                 {
-                    CombatSystem2D attackerCombat = attackerView.GetComponent<CombatSystem2D>();
-                    if (attackerCombat != null)
-                        attackerView.RPC(nameof(CombatSystem2D.KillConfirmed), attackerView.Owner);
+                    PhotonView attackerView = PhotonView.Find(attackerViewID);
+                    if (attackerView != null)
+                    {
+                        CombatSystem2D attackerCombat = attackerView.GetComponent<CombatSystem2D>();
+                        if (attackerCombat != null)
+                            attackerView.RPC(nameof(CombatSystem2D.KillConfirmed), attackerView.Owner);
+                    }
                 }
             }
 

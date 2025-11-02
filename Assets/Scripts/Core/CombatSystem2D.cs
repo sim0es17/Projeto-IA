@@ -1,3 +1,4 @@
+//combatsystem2d.cs
 using UnityEngine;
 using Photon.Pun;
 using Photon.Pun.UtilityScripts;
@@ -99,10 +100,8 @@ public class CombatSystem2D : MonoBehaviourPunCallbacks
                     // Chama TakeDamage no alvo (Todos veem o dano)
                     targetView.RPC(nameof(Health.TakeDamage), RpcTarget.All, finalDamage, photonView.ViewID);
 
-                    // Adicionar pontuação (só o atacante adiciona)
+                    // Adicionar pontuação pelo dano (Continua a pontuar pelo dano)
                     PhotonNetwork.LocalPlayer.AddScore(finalDamage);
-                    if (RoomManager.instance != null)
-                        RoomManager.instance.SetMashes();
 
                     Debug.Log($"{gameObject.name} acertou {enemy.name} com {finalDamage} de dano!");
                 }
@@ -117,7 +116,7 @@ public class CombatSystem2D : MonoBehaviourPunCallbacks
         // atualiza o score e CustomProperties.
         if (!photonView.IsMine) return;
 
-        PhotonNetwork.LocalPlayer.AddScore(100);
+        // <-- LINHA REMOVIDA: PhotonNetwork.LocalPlayer.AddScore(100);
 
         int currentKills = 0;
         if (PhotonNetwork.LocalPlayer.CustomProperties.ContainsKey("Kills"))
@@ -127,7 +126,7 @@ public class CombatSystem2D : MonoBehaviourPunCallbacks
         ExitGames.Client.Photon.Hashtable props = new ExitGames.Client.Photon.Hashtable { { "Kills", currentKills } };
         PhotonNetwork.LocalPlayer.SetCustomProperties(props);
 
-        Debug.Log($"{gameObject.name} matou um inimigo! +100 pontos e +1 kill");
+        Debug.Log($"{gameObject.name} matou um inimigo! +1 kill (Sem pontos bónus)");
     }
 
     private IEnumerator DestroyVFX(GameObject vfx, float delay)
