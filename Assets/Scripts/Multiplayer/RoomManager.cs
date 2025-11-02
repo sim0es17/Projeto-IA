@@ -1,3 +1,4 @@
+//roomManager.cs
 using UnityEngine;
 using Photon.Pun;
 using Hashtable = ExitGames.Client.Photon.Hashtable;
@@ -9,7 +10,7 @@ public class RoomManager : MonoBehaviourPunCallbacks
     public GameObject player;
 
     [Space]
-    public Transform []spawnPoints;
+    public Transform[] spawnPoints;
 
     [Space]
     public GameObject roomCam;
@@ -20,10 +21,7 @@ public class RoomManager : MonoBehaviourPunCallbacks
     public GameObject nameUI;
     public GameObject connectigUI;
 
-    [HideInInspector]
-    public int kills = 0;
-    [HideInInspector]
-    public int deaths = 0;
+    // <-- CORRECAO: Variáveis 'kills' e 'deaths' removidas 
 
     public string roomNameToJoin = "Noname";
 
@@ -70,20 +68,5 @@ public class RoomManager : MonoBehaviourPunCallbacks
         PhotonNetwork.LocalPlayer.NickName = nickName;
     }
 
-    public void SetMashes()
-    {
-        try
-        {
-            Hashtable hash = PhotonNetwork.LocalPlayer.CustomProperties;
-
-            hash["kills"] = kills;
-            hash["deaths"] = deaths;
-
-            PhotonNetwork.LocalPlayer.SetCustomProperties(hash);
-        }
-        catch
-        {
-            //Do nothing 
-        }
-    }
+    // <-- CORRECAO: Metodo SetMashes() removido
 }

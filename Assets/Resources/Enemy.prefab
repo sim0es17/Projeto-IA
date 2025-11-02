@@ -12,11 +12,10 @@ GameObject:
   - component: {fileID: 2613397290233814230}
   - component: {fileID: 992458620138466334}
   - component: {fileID: 5931975016333529385}
-  - component: {fileID: 1384012326363099588}
   - component: {fileID: 245647368185658279}
-  - component: {fileID: 7802509092961023154}
-  - component: {fileID: 8983496501110029385}
-  m_Layer: 0
+  - component: {fileID: 1453835068279403646}
+  - component: {fileID: 6417134593850201348}
+  m_Layer: 7
   m_Name: Enemy
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -157,27 +156,6 @@ CapsuleCollider2D:
   m_Offset: {x: 0, y: 0}
   m_Size: {x: 1, y: 2}
   m_Direction: 0
---- !u!114 &1384012326363099588
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 394211489097314626}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 901226c15bab7804485b229e432e463f, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  walkSpeed: 0
-  sprintSpeed: 0
-  jumpForce: 0
-  maxJumps: 0
-  groundCheck: {fileID: 0}
-  groundCheckDistance: 0
-  groundLayer:
-    serializedVersion: 2
-    m_Bits: 0
 --- !u!114 &245647368185658279
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -196,11 +174,13 @@ MonoBehaviour:
   Synchronization: 3
   OwnershipTransfer: 0
   observableSearch: 2
-  ObservedComponents: []
+  ObservedComponents:
+  - {fileID: 1453835068279403646}
+  - {fileID: 6417134593850201348}
   sceneViewId: 0
   InstantiationId: 0
   isRuntimeInstantiated: 0
---- !u!114 &7802509092961023154
+--- !u!114 &1453835068279403646
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -209,21 +189,14 @@ MonoBehaviour:
   m_GameObject: {fileID: 394211489097314626}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 1cedd12176c538341825b93cdf05e3bf, type: 3}
+  m_Script: {fileID: 11500000, guid: 627855c7f81362d41938ffe0b1475957, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  damage: 0
-  attackRange: 0
-  attackCooldown: 0
-  attackPoint: {fileID: 0}
-  enemyLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  defenseDuration: 0
-  defenseCooldown: 0
-  isDefending: 0
-  hitVFX: {fileID: 0}
---- !u!114 &8983496501110029385
+  m_SynchronizePosition: 1
+  m_SynchronizeRotation: 1
+  m_SynchronizeScale: 0
+  m_UseLocal: 1
+--- !u!114 &6417134593850201348
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -232,10 +205,10 @@ MonoBehaviour:
   m_GameObject: {fileID: 394211489097314626}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 710a7e47ccf4c664889d1856896f2cbe, type: 3}
+  m_Script: {fileID: 11500000, guid: 0e7cb724808c322458aa4d15f5035fa9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  movement: {fileID: 0}
-  combat: {fileID: 0}
-  nickname: 
-  nicknameText: {fileID: 0}
+  m_SynchronizeVelocity: 1
+  m_SynchronizeAngularVelocity: 0
+  m_TeleportEnabled: 0
+  m_TeleportIfDistanceGreaterThan: 3

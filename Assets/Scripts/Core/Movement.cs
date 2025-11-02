@@ -16,26 +16,38 @@ public class Movement2D : MonoBehaviour
     public float groundCheckDistance;
     public LayerMask groundLayer;
 
+    [Header("Knockback")] // Novo Header
+    public bool isKnockedBack = false; // Flag para desativar o controle
+
     private Rigidbody2D rb;
     private bool sprinting;
     private bool grounded;
     private int jumpCount;
-
-
     private CombatSystem2D combatSystem;
 
     void Start()
     {
         rb = GetComponent<Rigidbody2D>();
-
         combatSystem = GetComponent<CombatSystem2D>();
 
         if (groundCheck == null)
             Debug.LogWarning("GroundCheck não atribuído no inspector!");
     }
 
+    // Método público para ser chamado pelo Health.cs
+    public void SetKnockbackState(bool state)
+    {
+        isKnockedBack = state;
+    }
+
     void Update()
     {
+        // Se estiver a sofrer knockback, ignora todos os inputs de movimento.
+        if (isKnockedBack)
+        {
+            return;
+        }
+
         // Se estiver a defender, para o movimento horizontal e ignora o resto da função.
         if (combatSystem != null && combatSystem.isDefending)
         {
