@@ -217,6 +217,7 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 8
   isKnockedBack: 0
+  attackPoint: {fileID: 0}
 --- !u!114 &3548697139772030856
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -239,6 +240,8 @@ MonoBehaviour:
   defenseCooldown: 0.2
   isDefending: 0
   hitVFX: {fileID: 9081207694187098227, guid: a14c85ec1b7dde140924e194f58c2f0b, type: 3}
+  defenseIcon: {fileID: 0}
+  defenseText: {fileID: 0}
 --- !u!114 &8401734005627533140
 MonoBehaviour:
   m_ObjectHideFlags: 0
