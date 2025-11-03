@@ -214,12 +214,12 @@ MonoBehaviour:
   jumpForce: 5
   maxJumps: 2
   groundCheck: {fileID: 6785350556649017207}
-  groundCheckDistance: 0.1
+  groundCheckRadius: 0.1
   groundLayer:
     serializedVersion: 2
     m_Bits: 8
   isKnockedBack: 0
-  attackPoint: {fileID: 8491974259468159439}
+  attackPoint: {fileID: 0}
 --- !u!114 &3548697139772030856
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -462,7 +462,7 @@ MonoBehaviour:
   m_spriteAsset: {fileID: 0}
   m_tintAllSprites: 0
   m_StyleSheet: {fileID: 0}
-  m_TextStyleHashCode: 0
+  m_TextStyleHashCode: -1183493901
   m_overrideHtmlColors: 0
   m_faceColor:
     serializedVersion: 2
@@ -718,7 +718,7 @@ Transform:
   m_GameObject: {fileID: 2480449986994863222}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0.011, y: -0.465, z: 0}
+  m_LocalPosition: {x: 0.0207, y: -0.0581, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -758,8 +758,8 @@ CircleCollider2D:
   m_UsedByEffector: 0
   m_CompositeOperation: 0
   m_CompositeOrder: 0
-  m_Offset: {x: 0.007457435, y: 0.4401259}
-  m_Radius: 0.068574384
+  m_Offset: {x: 0, y: 0}
+  m_Radius: 0.05
 --- !u!1 &3010875529657053083
 GameObject:
   m_ObjectHideFlags: 0
@@ -1354,7 +1354,7 @@ MonoBehaviour:
   m_spriteAsset: {fileID: 0}
   m_tintAllSprites: 0
   m_StyleSheet: {fileID: 0}
-  m_TextStyleHashCode: 0
+  m_TextStyleHashCode: -1183493901
   m_overrideHtmlColors: 0
   m_faceColor:
     serializedVersion: 2
