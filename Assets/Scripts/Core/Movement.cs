@@ -52,7 +52,7 @@ public class Movement2D : MonoBehaviour
     {
         float move = 0f; // valor de input horizontal para o Animator
 
-        // 1) Verificar chão SEMPRE
+        // 1) Verificar chão SEMPRE (OverlapCircle)
         if (groundCheck != null)
         {
             grounded = Physics2D.OverlapCircle(
@@ -62,8 +62,8 @@ public class Movement2D : MonoBehaviour
             );
         }
 
-        // Se está no chão e praticamente não está a subir, reset do salto
-        if (grounded && rb.linearVelocity.y <= 0.1f)
+        // Se está no chão e praticamente não está a subir/descer, reset do salto
+        if (rb != null && Mathf.Abs(rb.linearVelocity.y) <= 0.1f && grounded)
         {
             jumpCount = 0;
         }
@@ -111,10 +111,20 @@ public class Movement2D : MonoBehaviour
             }
 
             // Salto com W (duplo salto)
-            if (Input.GetKeyDown(KeyCode.W) && jumpCount < maxJumps)
+            if (Input.GetKeyDown(KeyCode.W))
             {
-                rb.linearVelocity = new Vector2(rb.linearVelocity.x, jumpForce);
-                jumpCount++;
+                // 🔒 FAIL-SAFE: se estivermos praticamente parados em Y,
+                // começamos uma nova sequência de saltos
+                if (rb != null && Mathf.Abs(rb.linearVelocity.y) <= 0.1f)
+                {
+                    jumpCount = 0;
+                }
+
+                if (jumpCount < maxJumps)
+                {
+                    rb.linearVelocity = new Vector2(rb.linearVelocity.x, jumpForce);
+                    jumpCount++;
+                }
             }
         }
         else
@@ -138,6 +148,24 @@ public class Movement2D : MonoBehaviour
         {
             Gizmos.color = grounded ? Color.green : Color.red;
             Gizmos.DrawWireSphere(groundCheck.position, groundCheckRadius);
+        }
+    }
+
+    // Redundância de chão via colisão (mantida)
+    private void OnCollisionEnter2D(Collision2D collision)
+    {
+        if (((1 << collision.gameObject.layer) & groundLayer) != 0)
+        {
+            grounded = true;
+            jumpCount = 0;
+        }
+    }
+
+    private void OnCollisionExit2D(Collision2D collision)
+    {
+        if (((1 << collision.gameObject.layer) & groundLayer) != 0)
+        {
+            grounded = false;
         }
     }
 }
