@@ -6,16 +6,28 @@ public class CameraIntroZoomFOV : MonoBehaviour
     public Camera cam;
 
     [Header("Zoom (Orthographic)")]
-    public float startSize = 10f;   // tamanho inicial (mais afastado)
-    public float targetSize = 5f;   // tamanho normal
-    public float duration = 2f;     // tempo do zoom em segundos
+    public float startSize = 12f;   // tamanho inicial (mais afastado)
+    public float targetSize = 6f;   // tamanho final (zoom normal)
+    public float duration = 3f;     // tempo do zoom
 
-    private void OnEnable()
+    private bool hasZoomed = false;
+
+    private void Awake()
     {
         if (cam == null)
             cam = GetComponent<Camera>();
 
+        // Define o tamanho inicial
         cam.orthographicSize = startSize;
+    }
+
+    // Chama isto quando o player local for ativado
+    public void StartZoom()
+    {
+        if (!gameObject.activeInHierarchy || hasZoomed)
+            return;
+
+        hasZoomed = true;
         StartCoroutine(ZoomIn());
     }
 

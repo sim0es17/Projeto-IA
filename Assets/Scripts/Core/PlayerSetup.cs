@@ -18,6 +18,10 @@ public class PlayerSetup : MonoBehaviour
     {
         movement.enabled = true;
         camara.SetActive(true);
+        // inicia o zoom quando a câmara for ativada
+        var zoom = camara.GetComponent<CameraIntroZoomFOV>();
+        if (zoom != null)
+            zoom.StartZoom();
 
         // Enable combat system for the local player only
         if (combat != null)
