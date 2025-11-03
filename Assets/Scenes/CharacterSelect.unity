@@ -220,7 +220,7 @@ MonoBehaviour:
       m_Calls:
       - m_Target: {fileID: 343261571}
         m_TargetAssemblyTypeName: CharacterButton, Assembly-CSharp
-        m_MethodName: OnClickSelect
+        m_MethodName: OnClickChoose
         m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
@@ -958,7 +958,7 @@ MonoBehaviour:
       m_Calls:
       - m_Target: {fileID: 1251140207}
         m_TargetAssemblyTypeName: CharacterButton, Assembly-CSharp
-        m_MethodName: OnClickSelect
+        m_MethodName: OnClickChoose
         m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
@@ -1035,7 +1035,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fbf5720a95dfde74ebc1c1ca22159b8b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  selectedCharacterName: Soldier
+  selectedPrefabName: Soldier
 --- !u!4 &1438487742
 Transform:
   m_ObjectHideFlags: 0
@@ -1469,7 +1469,7 @@ MonoBehaviour:
       m_Calls:
       - m_Target: {fileID: 1581168663}
         m_TargetAssemblyTypeName: CharacterButton, Assembly-CSharp
-        m_MethodName: OnClickSelect
+        m_MethodName: OnClickChoose
         m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}

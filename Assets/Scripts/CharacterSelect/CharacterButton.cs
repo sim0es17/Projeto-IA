@@ -3,38 +3,29 @@ using UnityEngine.UI;
 
 public class CharacterButton : MonoBehaviour
 {
-    [Tooltip("Nome do prefab em Resources (Soldier, Chef, Thief...)")]
-    public string prefabName;
+    public string prefabName;          // Nome exato do prefab ("Soldier", "Chef", "Thief")
+    public Image highlight;            // referência opcional ao highlight do botão
 
-    [Tooltip("Imagem usada como highlight/contorno quando este botão está selecionado")]
-    public Image highlight;
-
-    public void OnClickSelect()
+    public void OnClickChoose()
     {
-        if (CharacterSelection.Instance == null)
+        // Define o personagem selecionado
+        if (CharacterSelection.Instance != null)
         {
-            Debug.LogWarning("CharacterSelection ainda não existe na cena.");
-            return;
+            CharacterSelection.Instance.SetSelectedCharacter(prefabName);
+            Debug.Log($"[CharacterButton] Selecionaste: {prefabName}");
         }
 
-        CharacterSelection.Instance.SelectCharacter(prefabName);
-        HighlightThisButton();
-    }
-
-    private void HighlightThisButton()
-    {
-        if (highlight == null) return;
-
-        // Desliga o highlight nos outros botões irmãos
-        Transform parent = transform.parent;
-        for (int i = 0; i < parent.childCount; i++)
+        // Ativa o highlight deste botão e desativa os outros
+        if (highlight != null)
         {
-            var btn = parent.GetChild(i).GetComponent<CharacterButton>();
-            if (btn != null && btn.highlight != null)
+            highlight.enabled = true;
+        }
+
+        // Desativar o highlight dos outros botões
+        foreach (CharacterButton btn in FindObjectsOfType<CharacterButton>())
+        {
+            if (btn != this && btn.highlight != null)
                 btn.highlight.enabled = false;
         }
-
-        // Liga o highlight deste
-        highlight.enabled = true;
     }
 }

@@ -8,9 +8,7 @@ public class TGRoomManager : MonoBehaviourPunCallbacks
 {
     public static TGRoomManager instance;
 
-    public GameObject player;
-
-    [Space]
+    [Header("Spawn")]
     public Transform[] spawnPoints;
 
     [Space]
@@ -21,7 +19,6 @@ public class TGRoomManager : MonoBehaviourPunCallbacks
         instance = this;
     }
 
-    // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
         Debug.Log("Connecting...");
@@ -42,9 +39,10 @@ public class TGRoomManager : MonoBehaviourPunCallbacks
     {
         base.OnJoinedLobby();
 
-        Debug.Log("Joined Training Ground");
+        Debug.Log("Joined Training Ground Lobby");
 
-        PhotonNetwork.JoinOrCreateRoom("TrainingGroundRoom", new Photon.Realtime.RoomOptions { MaxPlayers = 1 }, null);
+        PhotonNetwork.JoinOrCreateRoom("TrainingGroundRoom",
+            new Photon.Realtime.RoomOptions { MaxPlayers = 1 }, null);
     }
 
     public override void OnJoinedRoom()
@@ -60,10 +58,30 @@ public class TGRoomManager : MonoBehaviourPunCallbacks
 
     public void RespawnPlayer()
     {
-        Transform spawnPoint = spawnPoints[UnityEngine.Random.Range(0, spawnPoints.Length)];
+        Transform spawnPoint = spawnPoints[Random.Range(0, spawnPoints.Length)];
 
-        GameObject _player = PhotonNetwork.Instantiate(player.name, spawnPoint.position, Quaternion.identity);
-        _player.GetComponent<PlayerSetup>().IsLocalPlayer();
-        _player.GetComponent<Health>().isLocalPlayer = true;
+        string prefabName = "Soldier"; // default
+
+        if (CharacterSelection.Instance != null &&
+            !string.IsNullOrEmpty(CharacterSelection.Instance.selectedPrefabName))
+        {
+            prefabName = CharacterSelection.Instance.selectedPrefabName;
+        }
+
+        Debug.Log($"[TGRoomManager] Spawning prefab: {prefabName}");
+
+        GameObject _player = PhotonNetwork.Instantiate(
+            prefabName,
+            spawnPoint.position,
+            Quaternion.identity
+        );
+
+        PlayerSetup setup = _player.GetComponent<PlayerSetup>();
+        if (setup != null)
+            setup.IsLocalPlayer();
+
+        Health health = _player.GetComponent<Health>();
+        if (health != null)
+            health.isLocalPlayer = true;
     }
 }

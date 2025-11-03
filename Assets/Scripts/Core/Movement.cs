@@ -9,11 +9,11 @@ public class Movement2D : MonoBehaviour
 
     [Header("Pulo")]
     public float jumpForce;
-    public int maxJumps;
+    public int maxJumps = 2;
 
     [Header("Ground Check")]
     public Transform groundCheck;
-    public float groundCheckDistance;
+    public float groundCheckRadius = 0.1f;
     public LayerMask groundLayer;
 
     [Header("Knockback")]
@@ -52,21 +52,23 @@ public class Movement2D : MonoBehaviour
     {
         float move = 0f; // valor de input horizontal para o Animator
 
-        // 1) Atualizar chão SEMPRE (mesmo a defender ou em knockback)
+        // 1) Verificar chão SEMPRE
         if (groundCheck != null)
         {
-            grounded = Physics2D.Raycast(
+            grounded = Physics2D.OverlapCircle(
                 groundCheck.position,
-                Vector2.down,
-                groundCheckDistance,
+                groundCheckRadius,
                 groundLayer
             );
         }
 
-        if (grounded)
+        // Se está no chão e praticamente não está a subir, reset do salto
+        if (grounded && rb.linearVelocity.y <= 0.1f)
+        {
             jumpCount = 0;
+        }
 
-        // 2) Se estiver em knockback, não lê inputs, só deixa cair
+        // 2) Se estiver em knockback, não lê inputs
         if (isKnockedBack)
         {
             if (anim)
@@ -85,7 +87,7 @@ public class Movement2D : MonoBehaviour
             // Movimento horizontal
             move = Input.GetAxis("Horizontal");
             sprinting = Input.GetKey(KeyCode.LeftShift);
-            float speed = sprinting ? sprintSpeed : walkSpeed;
+            float speed = sprintSpeed > 0 ? (sprinting ? sprintSpeed : walkSpeed) : walkSpeed;
             rb.linearVelocity = new Vector2(move * speed, rb.linearVelocity.y);
 
             // Flip do sprite conforme o lado
@@ -108,7 +110,7 @@ public class Movement2D : MonoBehaviour
                 );
             }
 
-            // Salto com W
+            // Salto com W (duplo salto)
             if (Input.GetKeyDown(KeyCode.W) && jumpCount < maxJumps)
             {
                 rb.linearVelocity = new Vector2(rb.linearVelocity.x, jumpForce);
@@ -117,9 +119,9 @@ public class Movement2D : MonoBehaviour
         }
         else
         {
-            // 4) A defender → NÃO anda nem salta, mas pode cair normalmente
+            // 4) A defender → não anda nem salta, mas a gravidade continua
             rb.linearVelocity = new Vector2(0f, rb.linearVelocity.y);
-            move = 0f; // para o Animator ficar em Idle/Defend
+            move = 0f;
         }
 
         // 5) Atualizar Animator
@@ -135,26 +137,7 @@ public class Movement2D : MonoBehaviour
         if (groundCheck != null)
         {
             Gizmos.color = grounded ? Color.green : Color.red;
-            Gizmos.DrawLine(groundCheck.position, groundCheck.position + Vector3.down * groundCheckDistance);
-            Gizmos.DrawWireSphere(groundCheck.position + Vector3.down * groundCheckDistance, 0.05f);
-        }
-    }
-
-    // Redundância com colisão para detectar chão com segurança
-    private void OnCollisionEnter2D(Collision2D collision)
-    {
-        if (((1 << collision.gameObject.layer) & groundLayer) != 0)
-        {
-            grounded = true;
-            jumpCount = 0;
-        }
-    }
-
-    private void OnCollisionExit2D(Collision2D collision)
-    {
-        if (((1 << collision.gameObject.layer) & groundLayer) != 0)
-        {
-            grounded = false;
+            Gizmos.DrawWireSphere(groundCheck.position, groundCheckRadius);
         }
     }
 }
