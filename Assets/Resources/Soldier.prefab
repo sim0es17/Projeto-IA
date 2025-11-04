@@ -164,8 +164,8 @@ CapsuleCollider2D:
   m_UsedByEffector: 0
   m_CompositeOperation: 0
   m_CompositeOrder: 0
-  m_Offset: {x: 0.0019156694, y: 0.0022390187}
-  m_Size: {x: 0.1629275, y: 0.186751}
+  m_Offset: {x: 0.0029910565, y: 0.0022390187}
+  m_Size: {x: 0.16507827, y: 0.186751}
   m_Direction: 0
 --- !u!114 &788247720233381919
 MonoBehaviour:
@@ -525,6 +525,7 @@ GameObject:
   - component: {fileID: 4680205657692814750}
   - component: {fileID: 3149089365557184293}
   - component: {fileID: 2411068745142178634}
+  - component: {fileID: 8087985657373833023}
   m_Layer: 0
   m_Name: Camera
   m_TagString: MainCamera
@@ -692,6 +693,22 @@ MonoBehaviour:
   zoomInDuration: 0.5
   leftTriggerX: -17
   rightTriggerX: 17
+--- !u!114 &8087985657373833023
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2230336388305368168}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 185e4880118c30f45814101392df96d3, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  cam: {fileID: 0}
+  startSize: 12
+  targetSize: 6
+  duration: 3
 --- !u!1 &2480449986994863222
 GameObject:
   m_ObjectHideFlags: 0
