@@ -1,4 +1,5 @@
 using UnityEngine;
+using Photon.Pun; // Mantido para contexto
 
 [RequireComponent(typeof(Rigidbody2D))]
 public class Movement2D : MonoBehaviour
@@ -17,16 +18,17 @@ public class Movement2D : MonoBehaviour
     public LayerMask groundLayer;
 
     [Header("Knockback")]
-    public bool isKnockedBack = false; // Flag para desativar o controlo
+    public bool isKnockedBack = false; // Flag para desativar o controle
 
-    [Header("Ataque (opcional)")]
-    public Transform attackPoint; // Para sincronizar o lado do ataque com o personagem
+    // --- PROPRIEDADES DE LEITURA PARA SINCRONIZAÇÃO (PlayerSetup.cs) ---
+    public float CurrentHorizontalSpeed => rb.linearVelocity.x;
+    public bool IsGrounded => grounded;
 
     private Rigidbody2D rb;
     private bool sprinting;
     private bool grounded;
     private int jumpCount;
-
+    // Opcional: Mantido para a verificação de defesa, mas pode ser removido
     private CombatSystem2D combatSystem;
     private Animator anim;
     private SpriteRenderer spriteRenderer;
@@ -42,7 +44,7 @@ public class Movement2D : MonoBehaviour
             Debug.LogWarning("GroundCheck não atribuído no inspector!");
     }
 
-    // Chamado pelo Health.cs quando levas knockback
+    // Método público para ser chamado pelo Health.cs
     public void SetKnockbackState(bool state)
     {
         isKnockedBack = state;
@@ -50,9 +52,7 @@ public class Movement2D : MonoBehaviour
 
     void Update()
     {
-        float move = 0f; // valor de input horizontal para o Animator
-
-        // 1) Verificar chão SEMPRE (OverlapCircle)
+        // 1. VERIFICAR CHÃO SEMPRE (OverlapCircle, mais robusto)
         if (groundCheck != null)
         {
             grounded = Physics2D.OverlapCircle(
@@ -62,15 +62,19 @@ public class Movement2D : MonoBehaviour
             );
         }
 
-        // Se está no chão e praticamente não está a subir/descer, reset do salto
-        if (rb != null && Mathf.Abs(rb.linearVelocity.y) <= 0.1f && grounded)
+        // 2. LÓGICA DE RESET DE SALTO
+        // Se está no chão E está quase parado verticalmente, reseta o salto
+        if (rb != null && grounded && Mathf.Abs(rb.linearVelocity.y) <= 0.1f)
         {
             jumpCount = 0;
         }
 
-        // 2) Se estiver em knockback, não lê inputs
+        float move = 0f;
+
+        // 3. ESTADO DE KNOCKBACK
         if (isKnockedBack)
         {
+            // Atualiza animações de queda/pouso, mas sem movimento
             if (anim)
             {
                 anim.SetFloat("Speed", 0f);
@@ -81,14 +85,25 @@ public class Movement2D : MonoBehaviour
 
         bool isDefending = (combatSystem != null && combatSystem.isDefending);
 
-        // 3) Se NÃO estiver a defender → movimento normal + salto
+        // 4. LÓGICA DE MOVIMENTO E SALTO (SÓ se NÃO estiver a defender)
         if (!isDefending)
         {
             // Movimento horizontal
             move = Input.GetAxis("Horizontal");
             sprinting = Input.GetKey(KeyCode.LeftShift);
-            float speed = sprintSpeed > 0 ? (sprinting ? sprintSpeed : walkSpeed) : walkSpeed;
-            rb.linearVelocity = new Vector2(move * speed, rb.linearVelocity.y);
+
+            // Lógica de velocidade
+            float currentSpeed = sprintSpeed > 0 ? (sprinting ? sprintSpeed : walkSpeed) : walkSpeed;
+
+            rb.linearVelocity = new Vector2(move * currentSpeed, rb.linearVelocity.y);
+
+            // Salto com W (duplo salto)
+            if (Input.GetKeyDown(KeyCode.W) && jumpCount < maxJumps)
+            {
+                // Reseta a velocidade vertical antes do salto para consistência
+                rb.linearVelocity = new Vector2(rb.linearVelocity.x, jumpForce);
+                jumpCount++;
+            }
 
             // Flip do sprite conforme o lado
             if (spriteRenderer != null)
@@ -98,43 +113,15 @@ public class Movement2D : MonoBehaviour
                 else if (move < -0.05f)
                     spriteRenderer.flipX = true;  // esquerda
             }
-
-            // Manter o ponto de ataque do lado certo
-            if (attackPoint != null && spriteRenderer != null)
-            {
-                float attackX = Mathf.Abs(attackPoint.localPosition.x);
-                attackPoint.localPosition = new Vector3(
-                    spriteRenderer.flipX ? -attackX : attackX,
-                    attackPoint.localPosition.y,
-                    attackPoint.localPosition.z
-                );
-            }
-
-            // Salto com W (duplo salto)
-            if (Input.GetKeyDown(KeyCode.W))
-            {
-                // 🔒 FAIL-SAFE: se estivermos praticamente parados em Y,
-                // começamos uma nova sequência de saltos
-                if (rb != null && Mathf.Abs(rb.linearVelocity.y) <= 0.1f)
-                {
-                    jumpCount = 0;
-                }
-
-                if (jumpCount < maxJumps)
-                {
-                    rb.linearVelocity = new Vector2(rb.linearVelocity.x, jumpForce);
-                    jumpCount++;
-                }
-            }
         }
         else
         {
-            // 4) A defender → não anda nem salta, mas a gravidade continua
+            // 5. A defender → Para o movimento horizontal
             rb.linearVelocity = new Vector2(0f, rb.linearVelocity.y);
-            move = 0f;
+            move = 0f; // Para que a animação "Speed" seja zero
         }
 
-        // 5) Atualizar Animator
+        // 6. Atualizar Animator
         if (anim)
         {
             anim.SetFloat("Speed", Mathf.Abs(move));
@@ -144,6 +131,7 @@ public class Movement2D : MonoBehaviour
 
     void OnDrawGizmosSelected()
     {
+        // Usa o Gizmos do OverlapCircle para visualizar
         if (groundCheck != null)
         {
             Gizmos.color = grounded ? Color.green : Color.red;
@@ -151,7 +139,7 @@ public class Movement2D : MonoBehaviour
         }
     }
 
-    // Redundância de chão via colisão (mantida)
+    // Redundância de chão via colisão
     private void OnCollisionEnter2D(Collision2D collision)
     {
         if (((1 << collision.gameObject.layer) & groundLayer) != 0)
@@ -165,7 +153,11 @@ public class Movement2D : MonoBehaviour
     {
         if (((1 << collision.gameObject.layer) & groundLayer) != 0)
         {
-            grounded = false;
+            // Só desativa 'grounded' se a velocidade vertical for negativa (a cair)
+            if (rb != null && rb.linearVelocity.y < 0)
+            {
+                grounded = false;
+            }
         }
     }
 }
