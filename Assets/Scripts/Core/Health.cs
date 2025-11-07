@@ -2,7 +2,8 @@ using System.Collections;
 using UnityEngine;
 using Photon.Pun;
 using TMPro;
-using ExitGames.Client.Photon;
+// Usar o alias completo para Hashtable do Photon para evitar ambiguidade.
+using Hashtable = ExitGames.Client.Photon.Hashtable;
 
 public class Health : MonoBehaviourPunCallbacks
 {
@@ -23,55 +24,44 @@ public class Health : MonoBehaviourPunCallbacks
     [Header("UI")]
     public TextMeshProUGUI healthText;
 
-    private bool isDead = false; // Flag importante para não levar dano depois de morrer
+    private bool isDead = false;
+    private PhotonView view;
 
-    private void Awake()
+    private void Awake()
     {
         rb = GetComponent<Rigidbody2D>();
         playerMovement = GetComponent<Movement2D>();
+        view = GetComponent<PhotonView>();
     }
 
     private void Start()
     {
         originalHealthBarsize = healthBar.sizeDelta.x;
-
-        // Garante que a vida inicial não passa do máximo nem fica negativa
-        health = Mathf.Clamp(health, 0, maxHealth);
-
+        health = Mathf.Clamp(health, 0, maxHealth);
         UpdateHealthUI();
     }
 
     // ------------------- KNOCKBACK -------------------
 
-    // Método que inicia a Coroutine de Knockback
     public void ApplyKnockback(Vector3 attackerPosition)
     {
-        if (rb == null || playerMovement == null) return;
+        if (rb == null || playerMovement == null || isDead) return;
 
-        // Calcula a direção oposta ao atacante
-        Vector2 direction = (transform.position - attackerPosition).normalized;
-
-        // Inicia a rotina de knockback
-        StartCoroutine(KnockbackRoutine(direction));
+        Vector2 direction = (transform.position - attackerPosition).normalized;
+        StartCoroutine(KnockbackRoutine(direction));
     }
 
-    // Coroutine para aplicar a força e controlar o estado do jogador
-    private IEnumerator KnockbackRoutine(Vector2 direction)
+    private IEnumerator KnockbackRoutine(Vector2 direction)
     {
-        // 1. Desativa o controlo do jogador
-        playerMovement.SetKnockbackState(true);
+        playerMovement.SetKnockbackState(true);
 
-        // 2. Aplica a força de impulso
-        rb.AddForce(direction * knockbackForce, ForceMode2D.Impulse);
+        rb.AddForce(direction * knockbackForce, ForceMode2D.Impulse);
 
-        // 3. Espera pela duração do knockback
-        yield return new WaitForSeconds(knockbackDuration);
+        yield return new WaitForSeconds(knockbackDuration);
 
-        // 4. Limpa a velocidade horizontal para evitar que o jogador deslize indefinidamente
-        rb.linearVelocity = new Vector2(0f, rb.linearVelocity.y);
+        rb.linearVelocity = new Vector2(0f, rb.linearVelocity.y);
 
-        // 5. Reativa o controlo do jogador
-        playerMovement.SetKnockbackState(false);
+        playerMovement.SetKnockbackState(false);
     }
 
     // ------------------- DANO -------------------
@@ -79,26 +69,22 @@ public class Health : MonoBehaviourPunCallbacks
     [PunRPC]
     public void TakeDamage(int _damage, int attackerViewID = -1)
     {
-        if (isDead) return; // Se já estiver morto, ignora dano adicional
+        if (isDead) return;
 
-        // Retira vida mas nunca abaixo de 0
-        health = Mathf.Max(health - _damage, 0);
+        health = Mathf.Max(health - _damage, 0);
 
         UpdateHealthUI();
 
         Debug.Log($"{gameObject.name} recebeu {_damage} de dano. Vida restante: {health}");
 
-        // --- Lógica de Knockback (SOMENTE para o Local Player) ---
-        if (isLocalPlayer && attackerViewID != -1)
+        // --- Lógica de Knockback (apenas para o jogador local) ---
+        if (view.IsMine && attackerViewID != -1)
         {
             PhotonView attackerView = PhotonView.Find(attackerViewID);
             if (attackerView != null)
             {
-                // ... (Lógica de Knockback permanece a mesma)
-                CombatSystem2D attackerCombat = attackerView.GetComponent<CombatSystem2D>();
-                EnemyAI attackerAI = attackerView.GetComponent<EnemyAI>();
-
-                if (attackerCombat != null || attackerAI != null)
+                // Assumindo CombatSystem2D ou EnemyAI para identificar o atacante
+                if (attackerView.GetComponent<CombatSystem2D>() != null || attackerView.GetComponent<EnemyAI>() != null)
                 {
                     ApplyKnockback(attackerView.transform.position);
                 }
@@ -108,56 +94,53 @@ public class Health : MonoBehaviourPunCallbacks
 
         if (health <= 0)
         {
-            isDead = true; // Marca como morto imediatamente
-            Debug.Log($"{gameObject.name} morreu!");
+            isDead = true;
+            Debug.Log($"{gameObject.name} morreu!");
 
-            if (isLocalPlayer) // Apenas o jogador que morreu processa esta lógica
-            {
-                // >>> ALTERAÇÃO PRINCIPAL: NOTIFICAR ROOM MANAGER <<<
-
-                // 1. Notifica o RoomManager (o MasterClient irá decrementar o contador de respawn)
+            // Lógica SÓ DEVE SER EXECUTADA PELO DONO DO OBJETO MORTO
+            if (view.IsMine)
+            {
+                // 1. Notifica o RoomManager sobre a morte
                 if (RoomManager.instance != null)
                 {
-                    // Passamos o jogador local para o RoomManager processar a morte
-                    RoomManager.instance.OnPlayerDied(PhotonNetwork.LocalPlayer);
+                    RoomManager.instance.OnPlayerDied(view.Owner);
                 }
 
-                // 2. Tenta fazer Respawn (o RoomManager verificará se o contador permite)
+                // 2. Tenta fazer Respawn
                 if (RoomManager.instance != null)
                 {
                     RoomManager.instance.RespawnPlayer();
                 }
 
-                // 3. Lógica de Kills/Deaths (mantida do seu código original)
-
-                // Aumenta a contagem de Mortes (Deaths)
-                int currentDeaths = 0;
-                if (PhotonNetwork.LocalPlayer.CustomProperties.ContainsKey("Deaths"))
-                    currentDeaths = (int)PhotonNetwork.LocalPlayer.CustomProperties["Deaths"];
+                // 3. Atualiza a contagem de Mortes (Deaths)
+                int currentDeaths = 0;
+                // Usa o tipo Hashtable correto (já definido no topo)
+                if (view.Owner.CustomProperties.ContainsKey("Deaths"))
+                    currentDeaths = (int)view.Owner.CustomProperties["Deaths"];
                 currentDeaths++;
 
-                ExitGames.Client.Photon.Hashtable props = new ExitGames.Client.Photon.Hashtable
+                Hashtable props = new Hashtable
         {
-        { "Deaths", currentDeaths }
+            { "Deaths", currentDeaths }
         };
-                PhotonNetwork.LocalPlayer.SetCustomProperties(props);
+                view.Owner.SetCustomProperties(props);
 
-                // Notificar o atacante (para KillConfirmed)
-                if (attackerViewID != -1)
+                // 4. Notificar o atacante (para KillConfirmed)
+                if (attackerViewID != -1)
                 {
                     PhotonView attackerView = PhotonView.Find(attackerViewID);
                     if (attackerView != null)
                     {
                         CombatSystem2D attackerCombat = attackerView.GetComponent<CombatSystem2D>();
                         if (attackerCombat != null)
+                            // CORREÇÃO CS0117: RpcTarget.Owner não existe. O correto é RpcTarget.MasterClient se for uma mensagem global
+                            // Mas se for só para o Atacante, use: attackerView.Owner (que é o objeto Player)
                             attackerView.RPC(nameof(CombatSystem2D.KillConfirmed), attackerView.Owner);
                     }
                 }
 
-                // 4. Destroi o objeto morto (somente o dono, após processar a morte/respawn)
-                PhotonView view = GetComponent<PhotonView>();
-                if (view != null && view.IsMine)
-                    PhotonNetwork.Destroy(gameObject);
+                // 5. Destrói o objeto na rede (apenas o dono deve fazê-lo)
+                PhotonNetwork.Destroy(gameObject);
             }
         }
     }
@@ -167,10 +150,9 @@ public class Health : MonoBehaviourPunCallbacks
     [PunRPC]
     public void Heal(int amount)
     {
-        if (isDead) return; // Não cura mortos
+        if (isDead) return;
 
-        // Soma vida mas sem ultrapassar o máximo
-        health = Mathf.Clamp(health + amount, 0, maxHealth);
+        health = Mathf.Clamp(health + amount, 0, maxHealth);
 
         UpdateHealthUI();
 

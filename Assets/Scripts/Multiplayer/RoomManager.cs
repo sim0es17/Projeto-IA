@@ -8,10 +8,10 @@ public class RoomManager : MonoBehaviourPunCallbacks
 {
     public static RoomManager instance;
 
-    // Constante para o número máximo de respawns (vidas)
-    private const int MAX_RESPAWNS = 3;
+    // O jogador tem o SPAWN INICIAL + 3 RESPAWNS (total de 4 vidas/chances)
+    private const int MAX_RESPAWNS = 2;
 
-    // Chave para a propriedade personalizada do Photon para rastrear respawns restantes
+    // Chave da Propriedade Personalizada para rastrear respawns restantes
     private const string RESPAWN_COUNT_KEY = "RespawnCount";
 
     public GameObject player;
@@ -39,7 +39,8 @@ public class RoomManager : MonoBehaviourPunCallbacks
             return;
         }
         instance = this;
-        DontDestroyOnLoad(this.gameObject); // Opcional, dependendo da sua gestão de cenas
+        // Mantém o objeto vivo entre cenas
+        DontDestroyOnLoad(this.gameObject);
     }
 
     public void ChangeNickName(string _name)
@@ -47,20 +48,54 @@ public class RoomManager : MonoBehaviourPunCallbacks
         nickName = _name;
     }
 
+    // --- FUNÇÕES DE CONEXÃO E SALA ---
+
+    public void ConnectToMaster()
+    {
+        // 1. Inicia a conexão com o Photon Master Server
+        if (!PhotonNetwork.IsConnected)
+        {
+            PhotonNetwork.ConnectUsingSettings();
+            Debug.Log("Tentando conectar ao Photon Master Server...");
+            nameUI.SetActive(false);
+            connectigUI.SetActive(true);
+        }
+        else
+        {
+            // Se já estiver conectado, pula para tentar entrar na sala
+            JoinRoomLogic();
+        }
+    }
+
+    // Chamado ao pressionar o botão de Juntar Sala
     public void JoinRoomButtonPressed()
     {
-        Debug.Log("Connecting...");
+        // Se já estiver conectado ao Master, pode prosseguir
+        if (PhotonNetwork.IsConnectedAndReady)
+        {
+            JoinRoomLogic();
+        }
+        else
+        {
+            // Se não estiver, inicia a conexão.
+            ConnectToMaster();
+        }
+    }
+
+    // Lógica para criar ou entrar numa sala
+    private void JoinRoomLogic()
+    {
+        Debug.Log("Conexão estabelecida. Tentando entrar/criar sala...");
 
         RoomOptions ro = new RoomOptions();
 
-        // 1. Limita a sala a 4 jogadores
+        // Limita a sala a 4 jogadores
         ro.MaxPlayers = 4;
 
         ro.CustomRoomProperties = new Hashtable()
         {
             { "mapSceneIndex", SceneManager.GetActiveScene().buildIndex },
             { "mapName", mapName }
-
         };
 
         ro.CustomRoomPropertiesForLobby = new[]
@@ -71,9 +106,24 @@ public class RoomManager : MonoBehaviourPunCallbacks
 
         // Entra ou cria a sala com as opções definidas
         PhotonNetwork.JoinOrCreateRoom(roomName: PlayerPrefs.GetString(key: "RoomNameToJoin"), ro, typedLobby: null);
+    }
 
-        nameUI.SetActive(false);
-        connectigUI.SetActive(true);
+    // --- CALLBACKS DO PHOTON ---
+
+    public override void OnConnectedToMaster()
+    {
+        base.OnConnectedToMaster();
+        Debug.Log("Conectado ao Master Server! Lobby automático.");
+        // Tenta entrar na sala imediatamente após conectar
+        JoinRoomLogic();
+    }
+
+    public override void OnDisconnected(DisconnectCause cause)
+    {
+        base.OnDisconnected(cause);
+        Debug.LogError($"Desconectado. Causa: {cause}");
+        connectigUI.SetActive(false);
+        nameUI.SetActive(true);
     }
 
     public override void OnJoinedRoom()
@@ -83,8 +133,9 @@ public class RoomManager : MonoBehaviourPunCallbacks
         Debug.Log("Joined room!");
 
         roomCam.SetActive(false);
+        connectigUI.SetActive(false); // Esconde a tela de connecting
 
-        // 2. Define a contagem inicial de respawn para o jogador local ao entrar na sala
+        // Define a contagem inicial de respawn (se ainda não estiver definida)
         SetInitialRespawnCount(PhotonNetwork.LocalPlayer);
 
         RespawnPlayer();
@@ -94,11 +145,11 @@ public class RoomManager : MonoBehaviourPunCallbacks
 
     public void SetInitialRespawnCount(Player player)
     {
-        // Define o número inicial de respawns se ainda não estiver definido
+        // Define o número inicial de respawns apenas se a propriedade não existir
         if (!player.CustomProperties.ContainsKey(RESPAWN_COUNT_KEY))
         {
             Hashtable props = new Hashtable();
-            // O jogador começa com 3 respawns
+            // Define 3 respawns restantes (além do spawn inicial)
             props.Add(RESPAWN_COUNT_KEY, MAX_RESPAWNS);
             player.SetCustomProperties(props);
             Debug.Log($"Jogador {player.NickName} inicializado com {MAX_RESPAWNS} respawns.");
@@ -107,36 +158,36 @@ public class RoomManager : MonoBehaviourPunCallbacks
 
     public void RespawnPlayer()
     {
-        // Obtém a contagem atual de respawns do jogador local
+        // Chama GetRespawnCount, que agora garante o valor MAX_RESPAWNS no primeiro spawn.
         int respawnsLeft = GetRespawnCount(PhotonNetwork.LocalPlayer);
 
-        // Verifica se o jogador ainda tem respawns disponíveis
+        // O jogador pode dar respawn se a contagem for MAX_RESPAWNS (primeiro spawn)
+        // OU se o valor sincronizado for maior que 0 (respawns seguintes).
         if (respawnsLeft > 0)
         {
             Transform spawnPoint = spawnPoints[UnityEngine.Random.Range(0, spawnPoints.Length)];
 
-            // Instancia o jogador na rede
             GameObject _player = PhotonNetwork.Instantiate(player.name, spawnPoint.position, Quaternion.identity);
+
             _player.GetComponent<PlayerSetup>().IsLocalPlayer();
             _player.GetComponent<Health>().isLocalPlayer = true;
 
             _player.GetComponent<PhotonView>().RPC("SetNickname", RpcTarget.AllBuffered, nickName);
             PhotonNetwork.LocalPlayer.NickName = nickName;
 
-            Debug.Log($"Respawn realizado. Respawn(s) restante(s) antes da próxima morte: {respawnsLeft}");
+            Debug.Log($"Respawn realizado para {PhotonNetwork.LocalPlayer.NickName}. Respawn(s) restante(s) antes da próxima morte: {respawnsLeft}");
         }
         else
         {
             // O jogador atingiu o limite de respawns
-            Debug.Log($"Limite de respawn atingido! Jogador {PhotonNetwork.LocalPlayer.NickName} não pode mais dar respawn.");
-            // Lógica para "Game Over" ou ecrã de espectador
+            Debug.Log($"LIMITE DE RESPAWN ATINGIDO! Jogador {PhotonNetwork.LocalPlayer.NickName} não pode mais dar respawn.");
         }
     }
 
-    // Chamado pelo script Health.cs quando um jogador morre
+    // Chamado pelo script Health.cs (no cliente que morreu)
     public void OnPlayerDied(Player playerWhoDied)
     {
-        // APENAS o MasterClient deve manipular e sincronizar o estado da sala para evitar conflitos
+        // APENAS o MasterClient deve manipular e sincronizar a contagem de respawns
         if (!PhotonNetwork.IsMasterClient) return;
 
         int currentRespawnCount = GetRespawnCount(playerWhoDied);
@@ -148,29 +199,23 @@ public class RoomManager : MonoBehaviourPunCallbacks
 
             Hashtable props = new Hashtable();
             props.Add(RESPAWN_COUNT_KEY, currentRespawnCount);
-            // Sincroniza a nova contagem para todos os jogadores
             playerWhoDied.SetCustomProperties(props);
 
-            Debug.Log($"Jogador {playerWhoDied.NickName} morreu. Restam {currentRespawnCount} respawn(s).");
-        }
-        else
-        {
-            Debug.Log($"Jogador {playerWhoDied.NickName} foi eliminado do jogo.");
+            Debug.Log($"[MasterClient] Jogador {playerWhoDied.NickName} morreu. Restam {currentRespawnCount} respawn(s).");
         }
     }
 
-    // Função auxiliar para obter a contagem de respawns de forma segura
+    // CORREÇÃO: Garante que o valor MAX_RESPAWNS é retornado se a propriedade ainda não estiver sincronizada
     private int GetRespawnCount(Player player)
     {
         if (player.CustomProperties.TryGetValue(RESPAWN_COUNT_KEY, out object count))
         {
             return (int)count;
         }
-        // Se a propriedade não estiver definida, assume-se o valor máximo
+        // Se a propriedade ainda não foi definida (o que pode ocorrer no primeiro frame devido ao tempo de rede),
+        // retorna o valor máximo, permitindo o spawn inicial.
         return MAX_RESPAWNS;
     }
-
-    // --- LÓGICA DE CONEXÃO E DESCONEXÃO ---
 
     public override void OnPlayerLeftRoom(Player otherPlayer)
     {
