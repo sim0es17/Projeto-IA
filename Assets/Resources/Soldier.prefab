@@ -24,7 +24,7 @@ GameObject:
   - component: {fileID: 3428132853830145352}
   m_Layer: 7
   m_Name: Soldier
-  m_TagString: Untagged
+  m_TagString: Player
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -264,6 +264,7 @@ MonoBehaviour:
   ObservedComponents:
   - {fileID: 4529615232168054896}
   - {fileID: 3538730646336838822}
+  - {fileID: 3533807659994901797}
   sceneViewId: 0
   InstantiationId: 0
   isRuntimeInstantiated: 0

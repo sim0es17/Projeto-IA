@@ -262,6 +262,7 @@ MonoBehaviour:
   ObservedComponents:
   - {fileID: 4529615232168054896}
   - {fileID: 3538730646336838822}
+  - {fileID: 3533807659994901797}
   sceneViewId: 0
   InstantiationId: 0
   isRuntimeInstantiated: 0
@@ -326,6 +327,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2302b975a3bce964d8fcf4379b16b4e5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  maxHealth: 100
   health: 100
   isLocalPlayer: 0
   healthBar: {fileID: 3206697270659085744}
