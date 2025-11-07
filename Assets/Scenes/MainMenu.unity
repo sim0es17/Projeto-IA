@@ -336,7 +336,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   mainButtonsPanel: {fileID: 0}
   playOptionsPanel: {fileID: 0}
-  multiplayerSceneName: MultiplayerScene
+  multiplayerSceneName: MultiplayerLobby
   characterSelectSceneName: CharacterSelect
   trainingSceneName: TrainingGroundScene
 --- !u!1 &416774982
@@ -370,7 +370,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   mainButtonsPanel: {fileID: 163577173}
   playOptionsPanel: {fileID: 1809367855}
-  multiplayerSceneName: Multiplayer
+  multiplayerSceneName: MultiplayerLobby
   characterSelectSceneName: CharacterSelect
   trainingSceneName: TrainingGround
 --- !u!4 &416774984
