@@ -8,7 +8,7 @@ public class MenuController : MonoBehaviour
     [SerializeField] private GameObject playOptionsPanel;   // Painel com Multiplayer/Training
 
     [Header("Nomes das cenas (exactos nas Build Settings)")]
-    [SerializeField] private string multiplayerSceneName = "Multiplayer";
+    [SerializeField] private string multiplayerSceneName = "MultiplayerLobby";
     [SerializeField] private string characterSelectSceneName = "CharacterSelect";
     [SerializeField] private string trainingSceneName = "TrainingGround";
     private void Awake()

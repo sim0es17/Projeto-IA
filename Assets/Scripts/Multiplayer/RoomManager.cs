@@ -1,6 +1,9 @@
 using UnityEngine;
 using Photon.Pun;
 using Hashtable = ExitGames.Client.Photon.Hashtable;
+using Photon.Realtime;
+
+using UnityEngine.SceneManagement;
 
 public class RoomManager : MonoBehaviourPunCallbacks
 {
@@ -14,13 +17,13 @@ public class RoomManager : MonoBehaviourPunCallbacks
     [Space]
     public GameObject roomCam;
 
-    private string nickName = "Nameless";
-
     [Space]
     public GameObject nameUI;
     public GameObject connectigUI;
 
-    public string roomNameToJoin = "Noname";
+    private string nickName = "Nameless";
+
+    public string mapName = "Noname";
 
     void Awake()
     {
@@ -36,7 +39,22 @@ public class RoomManager : MonoBehaviourPunCallbacks
     {
         Debug.Log("Connecting...");
 
-        PhotonNetwork.JoinOrCreateRoom(roomNameToJoin, new Photon.Realtime.RoomOptions { MaxPlayers = 4 }, null);
+        RoomOptions ro = new RoomOptions();
+
+        ro.CustomRoomProperties = new Hashtable() 
+        {
+            { "mapSceneIndex", SceneManager.GetActiveScene().buildIndex },
+            { "mapName", mapName }
+
+        };
+
+        ro.CustomRoomPropertiesForLobby = new [] 
+        { 
+            "mapSceneIndex",
+            "mapName"
+        };
+
+        PhotonNetwork.JoinOrCreateRoom(roomName:PlayerPrefs.GetString(key:"RoomNameToJoin"), ro, typedLobby:null);
 
         nameUI.SetActive(false);
         connectigUI.SetActive(true);
