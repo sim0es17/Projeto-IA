@@ -219,7 +219,6 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 8
   isKnockedBack: 0
-  attackPoint: {fileID: 0}
 --- !u!114 &3548697139772030856
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -329,6 +328,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2302b975a3bce964d8fcf4379b16b4e5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  maxHealth: 100
   health: 100
   isLocalPlayer: 0
   healthBar: {fileID: 3206697270659085744}

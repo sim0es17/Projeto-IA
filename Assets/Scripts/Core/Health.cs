@@ -7,7 +7,8 @@ using ExitGames.Client.Photon;
 public class Health : MonoBehaviourPunCallbacks
 {
     [Header("Vida")]
-    public int health = 100;
+    public int maxHealth = 100;   // Vida máxima
+    public int health = 100;      // Vida actual
     public bool isLocalPlayer;
 
     public RectTransform healthBar;
@@ -22,7 +23,7 @@ public class Health : MonoBehaviourPunCallbacks
     [Header("UI")]
     public TextMeshProUGUI healthText;
 
-    private bool isDead = false; // <-- Manter esta flag. É importante.
+    private bool isDead = false; // Flag importante para não levar dano depois de morrer
 
     private void Awake()
     {
@@ -33,7 +34,14 @@ public class Health : MonoBehaviourPunCallbacks
     private void Start()
     {
         originalHealthBarsize = healthBar.sizeDelta.x;
+
+        // Garante que a vida inicial não passa do máximo nem fica negativa
+        health = Mathf.Clamp(health, 0, maxHealth);
+
+        UpdateHealthUI();
     }
+
+    // ------------------- KNOCKBACK -------------------
 
     // Método que inicia a Coroutine de Knockback
     public void ApplyKnockback(Vector3 attackerPosition)
@@ -50,7 +58,7 @@ public class Health : MonoBehaviourPunCallbacks
     // Coroutine para aplicar a força e controlar o estado do jogador
     private IEnumerator KnockbackRoutine(Vector2 direction)
     {
-        // 1. Desativa o controle do jogador
+        // 1. Desativa o controlo do jogador
         playerMovement.SetKnockbackState(true);
 
         // 2. Aplica a força de impulso
@@ -62,21 +70,21 @@ public class Health : MonoBehaviourPunCallbacks
         // 4. Limpa a velocidade horizontal para evitar que o jogador deslize indefinidamente
         rb.linearVelocity = new Vector2(0f, rb.linearVelocity.y);
 
-        // 5. Reativa o controle do jogador
+        // 5. Reativa o controlo do jogador
         playerMovement.SetKnockbackState(false);
     }
+
+    // ------------------- DANO -------------------
 
     [PunRPC]
     public void TakeDamage(int _damage, int attackerViewID = -1)
     {
         if (isDead) return; // Se já estiver morto, ignora dano adicional
 
-        health -= _damage;
+        // Retira vida mas nunca abaixo de 0
+        health = Mathf.Max(health - _damage, 0);
 
-        healthBar.sizeDelta = new Vector2(originalHealthBarsize * health / 100f, healthBar.sizeDelta.y);
-
-        if (healthText != null)
-            healthText.text = health.ToString();
+        UpdateHealthUI();
 
         Debug.Log($"{gameObject.name} recebeu {_damage} de dano. Vida restante: {health}");
 
@@ -116,14 +124,16 @@ public class Health : MonoBehaviourPunCallbacks
                     currentDeaths = (int)PhotonNetwork.LocalPlayer.CustomProperties["Deaths"];
                 currentDeaths++;
 
-                ExitGames.Client.Photon.Hashtable props = new ExitGames.Client.Photon.Hashtable { { "Deaths", currentDeaths } };
+                ExitGames.Client.Photon.Hashtable props = new ExitGames.Client.Photon.Hashtable
+                {
+                { "Deaths", currentDeaths }
+                };
                 PhotonNetwork.LocalPlayer.SetCustomProperties(props);
-
                 // 2. Fazer Respawn
                 if (RoomManager.instance != null)
                     RoomManager.instance.RespawnPlayer();
 
-                // 3. Notificar o atacante (LÓGICA MOVIDA PARA AQUI)
+                // 3. Notificar o atacante
                 if (attackerViewID != -1)
                 {
                     PhotonView attackerView = PhotonView.Find(attackerViewID);
@@ -144,6 +154,39 @@ public class Health : MonoBehaviourPunCallbacks
             PhotonView view = GetComponent<PhotonView>();
             if (view != null && view.IsMine)
                 PhotonNetwork.Destroy(gameObject);
+        }
+    }
+
+    // ------------------- CURA -------------------
+
+    [PunRPC]
+    public void Heal(int amount)
+    {
+        if (isDead) return; // Não cura mortos
+
+        // Soma vida mas sem ultrapassar o máximo
+        health = Mathf.Clamp(health + amount, 0, maxHealth);
+
+        UpdateHealthUI();
+
+        Debug.Log($"{gameObject.name} foi curado em {amount}. Vida actual: {health}");
+    }
+
+    // ------------------- UI -------------------
+
+    private void UpdateHealthUI()
+    {
+        if (healthBar != null)
+        {
+            healthBar.sizeDelta = new Vector2(
+                originalHealthBarsize * health / (float)maxHealth,
+                healthBar.sizeDelta.y
+            );
+        }
+
+        if (healthText != null)
+        {
+            healthText.text = health.ToString();
         }
     }
 }
