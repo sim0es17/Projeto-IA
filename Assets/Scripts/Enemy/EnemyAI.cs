@@ -1,8 +1,9 @@
 using UnityEngine;
 using System.Collections;
 using Photon.Pun;
-using ExitGames.Client.Photon;
+using ExitGames.Client.Photon; // Necessário para Hashes (embora não usado diretamente aqui)
 
+// Garante que o objeto inimigo tem estes componentes
 [RequireComponent(typeof(Rigidbody2D), typeof(PhotonView))]
 public class EnemyAI : MonoBehaviourPunCallbacks
 {
@@ -43,9 +44,10 @@ public class EnemyAI : MonoBehaviourPunCallbacks
     public int attackDamage = 10;           // Dano que o inimigo causa
     public float attackCooldown = 1.0f;     // Tempo entre ataques do inimigo
     public Transform attackPoint;           // Ponto de origem do ataque do inimigo
-    public LayerMask playerLayer;         // Camada do Jogador (NOVA CAMADA NECESSÁRIA)
+    public LayerMask playerLayer;           // Camada do Jogador (NOVA CAMADA NECESSÁRIA)
 
-    // --- NOVO: Propriedades para acesso externo (EnemyHealth) ---
+    // --- Propriedades para acesso externo (EnemyHealth) ---
+    // Isto é útil se tiveres um script separado para a vida do inimigo
     public float KnockbackForce => knockbackForce;
     public float StunTime => stunTime;
 
@@ -55,7 +57,7 @@ public class EnemyAI : MonoBehaviourPunCallbacks
     private Rigidbody2D rb;
     private float nextAttackTime = 0f;
     private PhotonView photonView;
-    private int direction = 1;
+    private int direction = 1; // 1 (Direita), -1 (Esquerda)
     private bool isGrounded = false;
 
     // --- 4. FUNÇÕES BASE ---
@@ -68,10 +70,13 @@ public class EnemyAI : MonoBehaviourPunCallbacks
 
     void Start()
     {
+        // A lógica de IA e spawns deve correr apenas no Master Client
         if (PhotonNetwork.IsMasterClient)
         {
             currentState = AIState.Patrol;
-            // A IA deve encontrar o jogador. Pode ser o mais próximo ou o primeiro.
+
+            // Procura o jogador (NOTA: Isto só encontra o primeiro. Em jogos multiplayer,
+            // pode ser necessário encontrar o jogador mais próximo ou manter uma lista).
             GameObject playerObj = GameObject.FindWithTag("Player");
             if (playerObj != null)
             {
@@ -82,10 +87,12 @@ public class EnemyAI : MonoBehaviourPunCallbacks
 
     void Update()
     {
+        // Apenas o Master Client controla a IA
         if (!PhotonNetwork.IsMasterClient) return;
 
         isGrounded = CheckGrounded();
 
+        // Máquina de estados
         switch (currentState)
         {
             case AIState.Patrol:
@@ -106,16 +113,16 @@ public class EnemyAI : MonoBehaviourPunCallbacks
         }
     }
 
-    // --- 5. LÓGICA DE ESTADOS (INALTERADA) ---
+    // --- 5. LÓGICA DE ESTADOS ---
 
     void HandlePatrol()
     {
-        // ... (lógica de patrulha) ...
         rb.linearVelocity = new Vector2(patrolSpeed * direction, rb.linearVelocity.y);
 
         Vector3 checkPos = groundCheckPoint.position;
         Vector2 checkDir = new Vector2(direction, 0);
 
+        // Verifica a beira da plataforma
         RaycastHit2D edgeHit = Physics2D.Raycast(
             checkPos + new Vector3(direction * wallCheckDistancePatrol, 0, 0),
             Vector2.down,
@@ -123,6 +130,7 @@ public class EnemyAI : MonoBehaviourPunCallbacks
             groundLayer
         );
 
+        // Verifica a parede
         RaycastHit2D wallHit = Physics2D.Raycast(
             transform.position,
             checkDir,
@@ -133,9 +141,11 @@ public class EnemyAI : MonoBehaviourPunCallbacks
         if (edgeHit.collider == null || wallHit.collider != null)
         {
             direction *= -1;
+            // FLIP do inimigo para a nova direção
             transform.localScale = new Vector3(direction, 1, 1);
         }
 
+        // Transição para Chase
         if (playerTarget != null && Vector2.Distance(transform.position, playerTarget.position) < chaseRange)
         {
             currentState = AIState.Chase;
@@ -144,14 +154,15 @@ public class EnemyAI : MonoBehaviourPunCallbacks
 
     void HandleChase()
     {
-        // ... (lógica de perseguição e salto) ...
         if (playerTarget == null) return;
 
         Vector2 targetPos = playerTarget.position;
         Vector2 selfPos = transform.position;
         float distance = Vector2.Distance(selfPos, targetPos);
+        // Calcula a direção baseada no alvo
         float directionX = (targetPos.x > selfPos.x) ? 1 : -1;
 
+        // FLIP do inimigo para virar para o jogador
         transform.localScale = new Vector3(directionX, 1, 1);
 
         // Transições
@@ -160,7 +171,7 @@ public class EnemyAI : MonoBehaviourPunCallbacks
             currentState = AIState.Attack;
             return;
         }
-        else if (distance > chaseRange * 1.5f)
+        else if (distance > chaseRange * 1.5f) // Perde o jogador de vista
         {
             currentState = AIState.Patrol;
             return;
@@ -169,6 +180,7 @@ public class EnemyAI : MonoBehaviourPunCallbacks
         // Movimento e Salto
         rb.linearVelocity = new Vector2(directionX * moveSpeed, rb.linearVelocity.y);
 
+        // Lógica de salto para ultrapassar paredes ou subir plataformas
         RaycastHit2D wallHit = Physics2D.Raycast(
             selfPos,
             new Vector2(directionX, 0),
@@ -200,6 +212,7 @@ public class EnemyAI : MonoBehaviourPunCallbacks
     {
         if (playerTarget == null) return;
 
+        // Certifica-se que o inimigo está virado para o jogador durante o ataque
         float directionX = (playerTarget.position.x > transform.position.x) ? 1 : -1;
         transform.localScale = new Vector3(directionX, 1, 1);
 
@@ -207,54 +220,57 @@ public class EnemyAI : MonoBehaviourPunCallbacks
 
         if (Time.time >= nextAttackTime)
         {
-            // O ataque só é executado no Master Client (Autoridade)
             DoAttack();
             nextAttackTime = Time.time + attackCooldown;
+            // Após o ataque, espera um pouco e volta a perseguir
             StartCoroutine(WaitAndTransitionTo(AIState.Chase, 0.5f));
         }
     }
 
     void HandleStunned()
     {
-        // ...
+        // Enquanto atordoado, o inimigo não faz nada (a lógica de movimento é tratada no ApplyKnockbackRPC)
     }
 
 
-    // --- 6. FUNÇÕES DE COMBATE (CORRIGIDO) ---
+    // --- 6. FUNÇÕES DE COMBATE ---
 
     void DoAttack()
     {
-        // 1. Deteção de acerto
+        // 1. Deteção de acerto (Collision Check)
         Collider2D[] hitPlayers = Physics2D.OverlapCircleAll(attackPoint.position, attackRange, playerLayer);
 
         foreach (Collider2D player in hitPlayers)
         {
             PhotonView targetView = player.GetComponent<PhotonView>();
-            // Procura pelo script de vida do jogador (Health.cs)
             Health playerHealth = player.GetComponent<Health>();
-            CombatSystem2D playerCombat = player.GetComponent<CombatSystem2D>(); // Para verificar defesa
+            CombatSystem2D playerCombat = player.GetComponent<CombatSystem2D>();
 
             if (targetView != null && playerHealth != null)
             {
-                // Determinar se o jogador está a defender (reduzindo o dano)
+                // Determinar se o jogador está a defender (simulação de redução de dano)
                 bool playerDefending = (playerCombat != null && playerCombat.isDefending);
                 int finalDamage = playerDefending ? attackDamage / 4 : attackDamage;
 
-                // O Inimigo causa dano ao Jogador. Chama TakeDamage do Health.cs.
-                // NOTE: O EnemyAI passa o SEU ViewID (do inimigo) como atacante.
+                // 2. Chamada de Dano pela Rede (RPC)
+                // targetView.RPC: Chama a função em todos os clientes
+                // nameof(Health.TakeDamage): Usa o nome da função no script Health.cs
+                // finalDamage: O valor do dano
+                // photonView.ViewID: O ID do atacante (deste inimigo)
                 targetView.RPC(nameof(Health.TakeDamage), RpcTarget.All, finalDamage, photonView.ViewID);
+
                 Debug.Log($"Inimigo atacou {player.name} com {finalDamage} de dano!");
             }
         }
     }
 
     /// <summary>
-    /// Chamado por RPC (do EnemyHealth) no Master Client para aplicar Knockback e Stun.
+    /// Chamado por RPC (do EnemyHealth ou Player) no Master Client para aplicar Knockback e Stun.
     /// </summary>
     [PunRPC]
     public void ApplyKnockbackRPC(Vector2 direction, float force, float time)
     {
-        if (!PhotonNetwork.IsMasterClient) return;
+        if (!PhotonNetwork.IsMasterClient) return; // Só o Master Client aplica a física
 
         currentState = AIState.Stunned;
 
@@ -264,10 +280,11 @@ public class EnemyAI : MonoBehaviourPunCallbacks
         StartCoroutine(ResetStun(time));
     }
 
-    // --- 7. UTILS & COROUTINES (INALTERADA) ---
+    // --- 7. UTILS & COROUTINES ---
 
     bool CheckGrounded()
     {
+        // Usa o ponto de origem do inimigo para verificar se toca no chão
         return Physics2D.Raycast(transform.position, Vector2.down, 0.1f, groundLayer);
     }
 
@@ -283,6 +300,7 @@ public class EnemyAI : MonoBehaviourPunCallbacks
     {
         yield return new WaitForSeconds(stunTime);
 
+        // Se o inimigo ainda estiver atordoado, volta a perseguir
         if (currentState == AIState.Stunned)
         {
             currentState = AIState.Chase;
@@ -292,6 +310,7 @@ public class EnemyAI : MonoBehaviourPunCallbacks
     IEnumerator WaitAndTransitionTo(AIState newState, float delay)
     {
         yield return new WaitForSeconds(delay);
+        // Garante que só transiciona se ainda estiver no estado Attack
         if (currentState == AIState.Attack)
         {
             currentState = newState;
@@ -300,6 +319,7 @@ public class EnemyAI : MonoBehaviourPunCallbacks
 
     void OnDrawGizmosSelected()
     {
+        // Desenha os raios de deteção no editor para facilitar a configuração
         if (attackPoint != null)
         {
             Gizmos.color = Color.magenta;
