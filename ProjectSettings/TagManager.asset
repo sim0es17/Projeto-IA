@@ -17,7 +17,7 @@ TagManager:
   - enemyLayers
   - Player
   - PlayerAttack
-  - 
+  - BG
   - 
   - 
   - 
@@ -43,6 +43,9 @@ TagManager:
   m_SortingLayers:
   - name: Default
     uniqueID: 0
+    locked: 0
+  - name: BG
+    uniqueID: 3463889889
     locked: 0
   m_RenderingLayers:
   - Default
