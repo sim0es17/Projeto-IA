@@ -97,4 +97,34 @@ public class CameraDynamicZoom : MonoBehaviour
         cam.orthographicSize = targetSize;
         onComplete?.Invoke();
     }
+
+    // ??? NOVO: permitir configurar por cena e reiniciar a intro
+    public void ConfigureForScene(
+        float _introStartSize,
+        float _normalSize,
+        float _edgeSize,
+        float _leftTriggerX,
+        float _rightTriggerX)
+    {
+        introStartSize = _introStartSize;
+        normalSize = _normalSize;
+        edgeSize = _edgeSize;
+        leftTriggerX = _leftTriggerX;
+        rightTriggerX = _rightTriggerX;
+
+        if (cam == null)
+            cam = GetComponent<Camera>();
+
+        // volta ao tamanho inicial
+        cam.orthographicSize = introStartSize;
+
+        // reinicia o estado da intro
+        introDone = false;
+
+        if (currentRoutine != null)
+            StopCoroutine(currentRoutine);
+
+        // volta a começar a animação de zoom da intro
+        StartZoom(normalSize, introDuration, () => introDone = true);
+    }
 }
