@@ -13,10 +13,34 @@ public class GameChat : MonoBehaviour
     public TMP_InputField inputField;
 
     private bool isInputFieldToggled;
+    // Adiciona uma referência ao RoomManager para verificar o estado
+    private RoomManager roomManager;
+
+    void Start()
+    {
+        // Encontra a instância do RoomManager (que deve ser global/DontDestroyOnLoad)
+        roomManager = RoomManager.instance;
+        if (roomManager == null)
+        {
+            Debug.LogError("GameChat não conseguiu encontrar a instância do RoomManager!");
+        }
+    }
 
     void Update()
     {
-
+        // !!! NOVO BLOQUEIO: Se o painel de nome estiver ativo, NÃO PROCESSA NENHUM INPUT DO CHAT !!!
+        if (roomManager != null && roomManager.IsNamePanelActive)
+        {
+            // Se o chat estiver acidentalmente aberto, fecha-o
+            if (isInputFieldToggled)
+            {
+                isInputFieldToggled = false;
+                inputField.DeactivateInputField();
+                UnityEngine.EventSystems.EventSystem.current.SetSelectedGameObject(null);
+            }
+            return; // Sai do Update imediatamente
+        }
+        // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
         if (Input.GetKeyDown(KeyCode.T) && !isInputFieldToggled)
         {
@@ -25,7 +49,7 @@ public class GameChat : MonoBehaviour
             inputField.ActivateInputField();
 
             Debug.Log("Toggled on");
-            
+
         }
 
         if (Input.GetKeyDown(KeyCode.Escape) && isInputFieldToggled)

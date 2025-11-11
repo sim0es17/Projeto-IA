@@ -26,6 +26,8 @@ public class RoomManager : MonoBehaviourPunCallbacks
     public GameObject nameUI;
     public GameObject connectigUI;
 
+    public bool IsNamePanelActive => nameUI.activeSelf;
+
     private string nickName = "Nameless";
 
     public string mapName = "Noname";
@@ -57,7 +59,7 @@ public class RoomManager : MonoBehaviourPunCallbacks
         {
             PhotonNetwork.ConnectUsingSettings();
             Debug.Log("Tentando conectar ao Photon Master Server...");
-            nameUI.SetActive(false);
+            nameUI.SetActive(false); // Esconde a UI do nome
             connectigUI.SetActive(true);
         }
         else
