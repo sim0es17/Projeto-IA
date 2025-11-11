@@ -4,7 +4,7 @@ using UnityEngine;
 using Photon.Pun;
 using Photon.Realtime;
 using TMPro;
-using UnityEngine.SceneManagement;
+using UnityEngine.SceneManagement; // Verifique se isto está incluído!
 
 public class RoomList : MonoBehaviourPunCallbacks
 {
@@ -25,6 +25,9 @@ public class RoomList : MonoBehaviourPunCallbacks
 
     public void CreateRoomByIndex(int sceneIndex)
     {
+        // Esta função já existia e está correta.
+        // Ela vai chamar a JoinRoomByName, que guarda o nome
+        // e carrega a cena do jogo (definida pelo sceneIndex).
         JoinRoomByName(cachedRoomNameToCreate, sceneIndex);
     }
 
@@ -33,12 +36,11 @@ public class RoomList : MonoBehaviourPunCallbacks
         Instance = this;
     }
 
-    // Start is called once before the first execution of Update after the MonoBehaviour is created
     IEnumerator Start()
     {
         // Precautions
         if (PhotonNetwork.InRoom)
-        { 
+        {
             PhotonNetwork.LeaveRoom();
             PhotonNetwork.Disconnect();
         }
@@ -108,16 +110,15 @@ public class RoomList : MonoBehaviourPunCallbacks
                 roomMapName = (string)mapNameObject;
             }
 
-            roomItem.transform.GetChild(0).GetComponent<TextMeshProUGUI>().text = room.Name + "(" + roomMapName +")";
+            roomItem.transform.GetChild(0).GetComponent<TextMeshProUGUI>().text = room.Name + "(" + roomMapName + ")";
             roomItem.transform.GetChild(1).GetComponent<TextMeshProUGUI>().text = room.PlayerCount + " /4";
 
             roomItem.GetComponent<RoomItemButton>().RoomName = room.Name;
 
             int roomSceneIndex = 1;
 
-            // Fetch the room custom property
             object sceneIndexObject;
-            if(room.CustomProperties.TryGetValue("mapSceneIndex", out sceneIndexObject))
+            if (room.CustomProperties.TryGetValue("mapSceneIndex", out sceneIndexObject))
             {
                 roomSceneIndex = (int)sceneIndexObject;
             }
@@ -134,5 +135,21 @@ public class RoomList : MonoBehaviourPunCallbacks
 
         SceneManager.LoadScene(_sceneIndex);
         // Load the relavant room 
+    }
+
+    //
+    // !!! NOVA FUNÇÃO ADICIONADA !!!
+    //
+    public void GoBackToMainMenu()
+    {
+        // É boa prática desconectar ao voltar para o menu principal
+        if (PhotonNetwork.IsConnected)
+        {
+            PhotonNetwork.Disconnect();
+        }
+
+        // Carrega a cena do Menu Principal
+        // !!! MUDA "MenuPrincipal" PARA O NOME EXATO DA TUA CENA !!!
+        SceneManager.LoadScene("MainMenu");
     }
 }
