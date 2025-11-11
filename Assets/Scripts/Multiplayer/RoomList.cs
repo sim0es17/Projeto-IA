@@ -4,18 +4,23 @@ using UnityEngine;
 using Photon.Pun;
 using Photon.Realtime;
 using TMPro;
-using UnityEngine.SceneManagement; // Verifique se isto está incluído!
+using UnityEngine.SceneManagement;
 
 public class RoomList : MonoBehaviourPunCallbacks
 {
     public static RoomList Instance;
 
-    [Header("UI")]
+    [Header("UI (Listagem)")]
     public Transform roomListParent;
     public GameObject roomListItemPrefab;
 
-    private List<RoomInfo> cachedRoomList = new List<RoomInfo>();
+    // !!! NOVAS VARIÁVEIS ADICIONADAS !!!
+    [Header("UI (Painéis)")]
+    public GameObject lobbyPanel; // O painel "Choose a game"
+    public GameObject createRoomPanel; // O painel "Pick a room name"
+    // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
+    private List<RoomInfo> cachedRoomList = new List<RoomInfo>();
     private string cachedRoomNameToCreate;
 
     public void ChangeRoomToCreateName(string _roomName)
@@ -25,9 +30,7 @@ public class RoomList : MonoBehaviourPunCallbacks
 
     public void CreateRoomByIndex(int sceneIndex)
     {
-        // Esta função já existia e está correta.
-        // Ela vai chamar a JoinRoomByName, que guarda o nome
-        // e carrega a cena do jogo (definida pelo sceneIndex).
+        // Esta função está perfeita para os teus botões "Create Room in Arena 1/2"
         JoinRoomByName(cachedRoomNameToCreate, sceneIndex);
     }
 
@@ -38,6 +41,11 @@ public class RoomList : MonoBehaviourPunCallbacks
 
     IEnumerator Start()
     {
+        // Boa prática: garantir que o painel de lobby está visível
+        // e o de criar sala está escondido ao iniciar.
+        if (lobbyPanel != null) lobbyPanel.SetActive(true);
+        if (createRoomPanel != null) createRoomPanel.SetActive(false);
+
         // Precautions
         if (PhotonNetwork.InRoom)
         {
@@ -59,6 +67,7 @@ public class RoomList : MonoBehaviourPunCallbacks
 
     public override void OnRoomListUpdate(List<RoomInfo> roomList)
     {
+        // ... (o resto desta função está igual e correto) ...
         if (cachedRoomList.Count <= 0)
         {
             cachedRoomList = roomList;
@@ -93,6 +102,7 @@ public class RoomList : MonoBehaviourPunCallbacks
 
     void UpdateUI()
     {
+        // ... (o resto desta função está igual e correto) ...
         foreach (Transform roomItem in roomListParent)
         {
             Destroy(roomItem.gameObject);
@@ -131,25 +141,46 @@ public class RoomList : MonoBehaviourPunCallbacks
     {
         PlayerPrefs.SetString("RoomNameToJoin", _name);
 
-        gameObject.SetActive(false);
+        // Esta linha pode dar problemas se o script estiver no mesmo objeto
+        // que os painéis. Se o menu desaparecer, remove a linha abaixo.
+        // gameObject.SetActive(false); 
 
         SceneManager.LoadScene(_sceneIndex);
         // Load the relavant room 
     }
 
-    //
-    // !!! NOVA FUNÇÃO ADICIONADA !!!
-    //
+
+    // Esta função é para o "Back" do Lobby -> Menu Principal
     public void GoBackToMainMenu()
     {
-        // É boa prática desconectar ao voltar para o menu principal
         if (PhotonNetwork.IsConnected)
         {
             PhotonNetwork.Disconnect();
         }
+        SceneManager.LoadScene("MainMenu"); // Continua correta
+    }
 
-        // Carrega a cena do Menu Principal
-        // !!! MUDA "MenuPrincipal" PARA O NOME EXATO DA TUA CENA !!!
-        SceneManager.LoadScene("MainMenu");
+    //
+    // !!! NOVAS FUNÇÕES ADICIONADAS !!!
+    //
+
+    /**
+     * Esta função é para o botão "Create a room" (no LobbyPanel).
+     * Esconde o Lobby e mostra o painel de criação de sala.
+     */
+    public void ShowCreateRoomPanel()
+    {
+        if (lobbyPanel != null) lobbyPanel.SetActive(false);
+        if (createRoomPanel != null) createRoomPanel.SetActive(true);
+    }
+
+    /**
+     * Esta função é para o botão "Back" (no CreateRoomPanel).
+     * Esconde o painel de criação e volta a mostrar o Lobby.
+     */
+    public void GoBackToLobbyPanel()
+    {
+        if (createRoomPanel != null) createRoomPanel.SetActive(false);
+        if (lobbyPanel != null) lobbyPanel.SetActive(true);
     }
 }
