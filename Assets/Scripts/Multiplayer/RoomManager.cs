@@ -8,8 +8,8 @@ public class RoomManager : MonoBehaviourPunCallbacks
 {
     public static RoomManager instance;
 
-    // O jogador tem o SPAWN INICIAL + 3 RESPAWNS (total de 4 vidas/chances)
-    private const int MAX_RESPAWNS = 2;
+    // O jogador tem o SPAWN INICIAL + MAX_RESPAWNS (total de chances = MAX_RESPAWNS + 1)
+    private const int MAX_RESPAWNS = 2; // Significa 1 spawn inicial + 2 respawns = 3 vidas/chances
 
     // Chave da Propriedade Personalizada para rastrear respawns restantes
     private const string RESPAWN_COUNT_KEY = "RespawnCount";
@@ -128,30 +128,26 @@ public class RoomManager : MonoBehaviourPunCallbacks
         nameUI.SetActive(true);
     }
 
-    // **FUNÇÃO CHAVE CORRIGIDA**
-    // Esta função agora APENAS transfere o controle para o LobbyManager.
+    // **FUNÇÃO CHAVE:** Não dá spawn diretamente; apenas passa o controle ao LobbyManager.
     public override void OnJoinedRoom()
     {
         base.OnJoinedRoom();
 
         Debug.Log("Joined room!");
 
-        //roomCam.SetActive(false); // Comentado - LobbyManager vai tratar disto
         connectigUI.SetActive(false); // Esconde a tela de connecting
 
-        // 1. Chama o LobbyManager para iniciar a lógica de espera
+        // 1. Chama o LobbyManager para iniciar a lógica de espera (UI do Lobby)
         if (LobbyManager.instance != null)
         {
             LobbyManager.instance.OnRoomEntered();
         }
 
-        // 2. O Spawn do jogador foi REMOVIDO daqui.
-        // SetInitialRespawnCount(PhotonNetwork.LocalPlayer); // (Corretamente comentado)
-        // RespawnPlayer();                                    // (Corretamente comentado)
+        // 2. O Spawn do jogador foi REMOVIDO daqui. Ele é chamado APENAS pelo LobbyManager.GameStartLogic().
+        // RespawnPlayer(); // (Corretamente comentado/removido)
     }
 
     // --- LÓGICA DE RESPAWN E MORTE ---
-    // (Estas funções agora são "ajudantes" chamadas pelo LobbyManager)
 
     public void SetInitialRespawnCount(Player player)
     {
@@ -162,24 +158,34 @@ public class RoomManager : MonoBehaviourPunCallbacks
             // Define 2 respawns restantes (além do spawn inicial)
             props.Add(RESPAWN_COUNT_KEY, MAX_RESPAWNS);
             player.SetCustomProperties(props);
-            Debug.Log($"Jogador {player.NickName} inicializado com {MAX_RESPAWNS} respawns.");
+            Debug.Log($"Jogador {player.NickName} inicializado com {MAX_RESPAWNS} respawns restantes.");
         }
     }
 
     public void RespawnPlayer()
     {
-        // Chama GetRespawnCount, que agora garante o valor MAX_RESPAWNS no primeiro spawn.
+        // Obtém a contagem de respawns restantes.
+        // O valor MAX_RESPAWNS (2) é retornado se esta for a primeira vez.
         int respawnsLeft = GetRespawnCount(PhotonNetwork.LocalPlayer);
 
-        if (respawnsLeft >= 0) // Mudado de > 0 para >= 0 para incluir o último spawn
+        // O jogador pode dar spawn se a contagem for MAX_RESPAWNS (primeiro spawn)
+        // OU se o valor sincronizado for maior ou igual a 0 (respawns seguintes).
+        // Se respawnsLeft for MAX_RESPAWNS (2), este é o primeiro spawn.
+        // Se respawnsLeft for 1 ou 0, são os respawns seguintes.
+
+        // CORREÇÃO: Usar respawnsLeft >= 0 para incluir o spawn inicial e todos os respawns seguintes
+        // até esgotar a contagem. MAX_RESPAWNS (2) + 1 vida é a contagem total.
+        if (respawnsLeft >= 0)
         {
             Transform spawnPoint = spawnPoints[UnityEngine.Random.Range(0, spawnPoints.Length)];
 
             GameObject _player = PhotonNetwork.Instantiate(player.name, spawnPoint.position, Quaternion.identity);
 
+            // Configurações do jogador local
             _player.GetComponent<PlayerSetup>().IsLocalPlayer();
             _player.GetComponent<Health>().isLocalPlayer = true;
 
+            // Define e sincroniza o Nickname
             _player.GetComponent<PhotonView>().RPC("SetNickname", RpcTarget.AllBuffered, nickName);
             PhotonNetwork.LocalPlayer.NickName = nickName;
 
@@ -200,6 +206,7 @@ public class RoomManager : MonoBehaviourPunCallbacks
 
         int currentRespawnCount = GetRespawnCount(playerWhoDied);
 
+        // Só decrementamos se o jogador tiver respawns restantes (currentRespawnCount > 0)
         if (currentRespawnCount > 0)
         {
             // Decrementa a contagem de respawns
@@ -219,7 +226,7 @@ public class RoomManager : MonoBehaviourPunCallbacks
         {
             return (int)count;
         }
-        // Se a propriedade ainda não foi definida, retorna o valor máximo
+        // Se a propriedade ainda não foi definida, retorna o valor máximo (permite o spawn inicial)
         return MAX_RESPAWNS;
     }
 
@@ -229,8 +236,5 @@ public class RoomManager : MonoBehaviourPunCallbacks
         Debug.LogFormat("OnPlayerLeftRoom() {0}", otherPlayer.NickName);
     }
 
-    //
-    // **NOTA: Os callbacks OnEnable, OnDisable, e OnSceneLoaded foram REMOVIDOS**
-    // (Esta era a causa do spawn duplicado)
-    //
+    // Os callbacks OnEnable, OnDisable, e OnSceneLoaded foram removidos
 }
