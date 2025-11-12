@@ -209,11 +209,7 @@ public class LobbyManager : MonoBehaviourPunCallbacks
         }
         else if (currentPlayers >= 2)
         {
-            // 90 segundos se o segundo jogador acabou de entrar e o timer não começou.
-            if (!isCountingDown)
-            {
-                SetStartTime(WAIT_TIME_FOR_SECOND_PLAYER);
-            }
+             SetStartTime(WAIT_TIME_FOR_SECOND_PLAYER);
         }
         else
         {

@@ -719,7 +719,6 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 6785350556649017207}
-  - component: {fileID: 4979925065539976047}
   m_Layer: 7
   m_Name: GroundCheck
   m_TagString: Untagged
@@ -742,42 +741,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 7911345477904398084}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!58 &4979925065539976047
-CircleCollider2D:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2480449986994863222}
-  m_Enabled: 1
-  serializedVersion: 3
-  m_Density: 1
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
-  m_ForceSendLayers:
-    serializedVersion: 2
-    m_Bits: 4294967295
-  m_ForceReceiveLayers:
-    serializedVersion: 2
-    m_Bits: 4294967295
-  m_ContactCaptureLayers:
-    serializedVersion: 2
-    m_Bits: 4294967295
-  m_CallbackLayers:
-    serializedVersion: 2
-    m_Bits: 4294967295
-  m_IsTrigger: 0
-  m_UsedByEffector: 0
-  m_CompositeOperation: 0
-  m_CompositeOrder: 0
-  m_Offset: {x: 0, y: 0}
-  m_Radius: 0.05
 --- !u!1 &3010875529657053083
 GameObject:
   m_ObjectHideFlags: 0
