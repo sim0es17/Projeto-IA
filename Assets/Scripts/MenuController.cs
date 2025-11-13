@@ -4,48 +4,52 @@ using UnityEngine.SceneManagement;
 public class MenuController : MonoBehaviour
 {
     [Header("Painéis")]
-    [SerializeField] private GameObject mainButtonsPanel;   // Painel com Play/Settings/Exit
-    [SerializeField] private GameObject playOptionsPanel;   // Painel com Multiplayer/Training
+    [Tooltip("Painel principal com os botões Play, Settings, Exit.")]
+    [SerializeField] private GameObject mainButtonsPanel;    // Painel com Play/Settings/Exit
 
-    [Header("Nomes das cenas (exactos nas Build Settings)")]
+    [Tooltip("Painel que aparece após carregar em Play (ex: Multiplayer/Training).")]
+    [SerializeField] private GameObject playOptionsPanel;    // Painel com Multiplayer/Training
+
+    [Header("Nomes das Cenas (exatamente como nas Build Settings)")]
     [SerializeField] private string multiplayerSceneName = "MultiplayerLobby";
     [SerializeField] private string characterSelectSceneName = "CharacterSelect";
     [SerializeField] private string trainingSceneName = "TrainingGround";
 
-    private void Awake()
+    // O OnEnable é a chave: é chamado sempre que o objeto é ativado, incluindo quando
+    // a cena é carregada. Garante que a UI aparece corretamente.
+    private void OnEnable()
     {
-        // Apenas para garantir que o objeto que contém o MenuController está ativo.
-        // Isso é um fallback de segurança se o pai estiver desativado.
-        if (!gameObject.activeSelf)
-        {
-            gameObject.SetActive(true);
-        }
+        // 1. Garante que o painel principal está ativo e o sub-menu está escondido.
+        TogglePanels(true, false);
+
+        // 2. Garante que o tempo do jogo está normal (se estava em pausa na cena anterior).
+        Time.timeScale = 1f;
     }
 
-    private void Start() // <-- O Unity chama o Start() APÓS a cena carregar
-    {
-        // A lógica de TogglePanels deve estar aqui para forçar a ativação do painel principal
-        TogglePanels(true, false); // Garante que o painel principal esteja ativo e o submenu desativo
-    }
+    // --- Botões do menu principal ---
 
-    // ---------- Botões do menu principal ----------
     public void OnPlayPressed()
     {
-        TogglePanels(false, true); // esconde principal, mostra submenu
+        // Esconde principal, mostra submenu
+        TogglePanels(false, true);
     }
 
     public void ExitGame()
     {
         Application.Quit();
+
 #if UNITY_EDITOR
+        // Esta linha permite que o botão 'Exit' funcione no editor do Unity
         UnityEditor.EditorApplication.isPlaying = false;
 #endif
     }
 
-    // ---------- Botões do submenu (Play Options) ----------
+    // --- Botões do submenu (Play Options) ---
+
     public void OnBackPressed()
     {
-        TogglePanels(true, false); // volta ao menu principal
+        // Volta ao menu principal
+        TogglePanels(true, false);
     }
 
     public void OnMultiplayerPressed()
@@ -58,13 +62,24 @@ public class MenuController : MonoBehaviour
         // Primeiro vai para a cena de seleção de personagem
         LoadSceneSafe(characterSelectSceneName);
     }
-    // ---------- Utilitários ----------
+
+    // --- Utilitários ---
+
+    /// <summary>
+    /// Ativa e desativa os painéis de UI.
+    /// </summary>
     private void TogglePanels(bool showMain, bool showPlayOptions)
     {
-        if (mainButtonsPanel != null) mainButtonsPanel.SetActive(showMain);
-        if (playOptionsPanel != null) playOptionsPanel.SetActive(showPlayOptions);
+        if (mainButtonsPanel != null)
+            mainButtonsPanel.SetActive(showMain);
+
+        if (playOptionsPanel != null)
+            playOptionsPanel.SetActive(showPlayOptions);
     }
 
+    /// <summary>
+    /// Carrega uma cena com verificação de segurança.
+    /// </summary>
     private void LoadSceneSafe(string sceneName)
     {
         if (string.IsNullOrEmpty(sceneName))

@@ -17,6 +17,10 @@ public class Movement2D : MonoBehaviour
     public float groundCheckRadius = 0.1f;
     public LayerMask groundLayer;
 
+    // --- NOVA PROPRIEDADE PARA WALL CHECK ---
+    [Header("Wall Check")]
+    private bool isTouchingWall = false; // Flag para saber se está a tocar numa parede lateralmente
+
     [Header("Knockback")]
     public bool isKnockedBack = false; // Flag para desativar o controle
 
@@ -74,20 +78,12 @@ public class Movement2D : MonoBehaviour
             );
         }
 
-        // --- LÓGICA DE KNOCKBACK (CORRIGIDA) ---
-        // Se estiver em Knockback, bloqueia o controlo, mas permite que a física do knockback mova o Rigidbody.
+        // --- LÓGICA DE KNOCKBACK ---
         if (isKnockedBack)
         {
-            if (rb != null && grounded)
-            {
-                // Opcional: Trava o movimento horizontal imediatamente se estiver no chão, para evitar deslize excessivo
-                // Mas, por agora, VAMOS DEIXAR A FORÇA DE IMPULSO DO KNOCKBACK MOVER O PLAYER.
-                // Não anular rb.linearVelocity.x aqui!
-            }
-
             if (anim)
             {
-                anim.SetFloat("Speed", 0f); // Animação de parado/stunned
+                anim.SetFloat("Speed", 0f);
                 anim.SetBool("Grounded", grounded);
             }
             return; // IGNORA O RESTO DA LÓGICA DE INPUT
@@ -95,10 +91,20 @@ public class Movement2D : MonoBehaviour
 
         // Se chegámos aqui, o controlo está ATIVO.
 
-        // 2. LÓGICA DE RESET DE SALTO
-        if (rb != null && grounded && Mathf.Abs(rb.linearVelocity.y) <= 0.1f)
+        // 2. LÓGICA DE RESET DE SALTO (MODIFICADA)
+        if (rb != null)
         {
-            jumpCount = 0;
+            // Reset principal se estiver no chão
+            if (grounded && Mathf.Abs(rb.linearVelocity.y) <= 0.1f)
+            {
+                jumpCount = 0;
+                isTouchingWall = false; // Garante que a flag de parede é limpa
+            }
+            // Reset se estiver a tocar na parede e não estiver no chão (para permitir Wall Jump)
+            else if (isTouchingWall && !grounded)
+            {
+                jumpCount = 0; // <--- RESET DO SALTO NA PAREDE
+            }
         }
 
         float move = 0f;
@@ -113,15 +119,18 @@ public class Movement2D : MonoBehaviour
 
             float currentSpeed = sprinting ? sprintSpeed : walkSpeed;
 
-            // Aplica a velocidade de movimento (apenas se houver input)
+            // Aplica a velocidade de movimento
             if (Mathf.Abs(move) > 0.05f)
             {
                 rb.linearVelocity = new Vector2(move * currentSpeed, rb.linearVelocity.y);
             }
             else
             {
-                // Se não houver input, define a velocidade horizontal para zero para parar.
-                rb.linearVelocity = new Vector2(0f, rb.linearVelocity.y);
+                // Se não houver input, define a velocidade horizontal para zero para parar, mas só se não estiver a tocar na parede (para evitar slide indesejado)
+                if (!isTouchingWall || grounded)
+                {
+                    rb.linearVelocity = new Vector2(0f, rb.linearVelocity.y);
+                }
             }
 
             // Salto com W (duplo salto)
@@ -164,30 +173,53 @@ public class Movement2D : MonoBehaviour
         }
     }
 
-    // --- Lógica de Colisão ---
+    // --- Lógica de Colisão (MODIFICADA) ---
 
     private void OnCollisionEnter2D(Collision2D collision)
     {
         if (((1 << collision.gameObject.layer) & groundLayer) != 0)
         {
-            // Apenas reseta se o ponto de contacto estiver por baixo do jogador
-            if (collision.GetContact(0).normal.y > 0.5f)
+            // O ideal é iterar sobre todos os contactos, mas para simplificar:
+            ContactPoint2D contact = collision.GetContact(0);
+
+            // A. Colisão por baixo (Chão)
+            if (contact.normal.y > 0.5f)
             {
                 grounded = true;
                 jumpCount = 0;
+                isTouchingWall = false; // Não é parede se for chão
+            }
+            // B. Colisão Lateral (Parede)
+            else if (Mathf.Abs(contact.normal.x) > 0.5f && !grounded)
+            {
+                // Verifica se a colisão é lateral e não estás no chão (para priorizar o ground check)
+                isTouchingWall = true;
             }
         }
     }
+
+    private void OnCollisionStay2D(Collision2D collision)
+    {
+        // Usamos o OnCollisionStay2D para manter a flag 'isTouchingWall' ativa enquanto estamos encostados.
+        if (((1 << collision.gameObject.layer) & groundLayer) != 0)
+        {
+            ContactPoint2D contact = collision.GetContact(0);
+
+            // Só ativa se for lateral e não for chão
+            if (Mathf.Abs(contact.normal.x) > 0.5f && contact.normal.y < 0.5f)
+            {
+                isTouchingWall = true;
+            }
+        }
+    }
+
 
     private void OnCollisionExit2D(Collision2D collision)
     {
         if (((1 << collision.gameObject.layer) & groundLayer) != 0)
         {
-            if (rb != null && rb.linearVelocity.y < 0)
-            {
-                // Se estiver a cair, sai do chão
-                // Mantemos o valor do OverlapCircle (Update) como o principal árbitro
-            }
+            // Quando sai da colisão com o objeto da groundLayer, desativa a flag de parede.
+            isTouchingWall = false;
         }
     }
 }
