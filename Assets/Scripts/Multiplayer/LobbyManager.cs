@@ -2,10 +2,11 @@ using UnityEngine;
 using Photon.Pun;
 using Photon.Realtime;
 using ExitGames.Client.Photon;
+using UnityEngine.UI;
 using Hashtable = ExitGames.Client.Photon.Hashtable;
 using TMPro;
 
-// Define a chave para as Custom Room Properties (Usadas para sincronizar dados da sala)
+// Define a chave para as Custom Room Properties (Chaves usadas para sincronizar dados da sala)
 public static class CustomRoomProperties
 {
     // Usar chaves curtas como "st" e "gs" ajuda a reduzir o tráfego de rede
@@ -19,25 +20,25 @@ public class LobbyManager : MonoBehaviourPunCallbacks
     public static LobbyManager instance;
 
     // --- NOVO FLAG PARA CONTROLE DE MOVIMENTO ---
-    // Controla se o jogo começou e se o jogador pode interagir (ex: mover)
+    // Outros scripts (como o de movimento) podem ler este flag para saber se podem agir.
     public static bool GameStartedAndPlayerCanMove = false;
 
     // --- Configurações de Tempo ---
     private const int MAX_PLAYERS = 4;
     private const float WAIT_TIME_FOR_SECOND_PLAYER = 90f; // 90 segundos para 2+ jogadores
-    private const float WAIT_TIME_FULL_ROOM = 5f;          // 5 segundos se a sala estiver cheia (4/4)
+    private const float WAIT_TIME_FULL_ROOM = 5f;         // 5 segundos se a sala estiver cheia (4/4)
 
     // --- Variáveis de Sincronização e Estado ---
     private bool isCountingDown = false;
-    private double startTime;              // O tempo real do Photon em que a contagem começou
-    private float countdownDuration;       // Duração total da contagem regressiva (90s ou 5s)
-    private float remainingTime;           // Tempo restante no countdown
+    private double startTime;             // O tempo real do Photon em que a contagem começou
+    private float countdownDuration;      // Duração total da contagem regressiva (90s ou 5s)
+    private float remainingTime;          // Tempo restante no countdown
 
     // --- Referências UI (Anexar no Inspector) ---
     [Header("UI Elements")]
-    public GameObject lobbyPanel;          // O painel que contém toda a UI do lobby (ativar/desativar)
-    public TextMeshProUGUI countdownText;     // Texto para mostrar o tempo restante
-    public TextMeshProUGUI playerListText;    // Texto para mostrar a lista de jogadores
+    public GameObject lobbyPanel;         // O painel que contém toda a UI do lobby (ativar/desativar)
+    public TMPro.TextMeshProUGUI countdownText;     // Texto para mostrar o tempo restante
+    public TMPro.TextMeshProUGUI playerListText;    // Texto para mostrar a lista de jogadores
 
     private void Awake()
     {
@@ -49,7 +50,8 @@ public class LobbyManager : MonoBehaviourPunCallbacks
         }
         instance = this;
 
-        // Garante que o movimento esteja desativado por padrão ao carregar a cena
+        // **CORREÇÃO 1: Garante que o movimento esteja desativado por padrão ao carregar a cena**
+        // Isto previne o spawn e movimento imediatos do Player 1 se o seu script de movimento estiver a verificar esta variável.
         GameStartedAndPlayerCanMove = false;
     }
 
@@ -59,10 +61,7 @@ public class LobbyManager : MonoBehaviourPunCallbacks
     public void OnRoomEntered()
     {
         // Ativa a tela de espera/lobby
-        if (lobbyPanel != null)
-        {
-            lobbyPanel.SetActive(true);
-        }
+        lobbyPanel.SetActive(true);
 
         // MasterClient verifica imediatamente as condições de início
         if (PhotonNetwork.IsMasterClient)
@@ -74,30 +73,19 @@ public class LobbyManager : MonoBehaviourPunCallbacks
         UpdateLobbyUI();
     }
 
-    // --- UPDATE LOOP (Logica de Contagem) ---
+    // --- UPDATE LOOP (Lógica de Contagem) ---
     void Update()
     {
-        // Verificação de segurança: Se o LobbyManager não estiver ativo, sai.
-        if (lobbyPanel == null || !lobbyPanel.activeSelf)
-        {
-            return;
-        }
-
-        // Se o RoomManager foi destruído (voltámos ao menu), saímos do Update.
-        if (RoomManager.instance == null)
-        {
-            return;
-        }
-
         // Só executa a lógica de contagem se estiver na sala e o timer estiver ativo
         if (!PhotonNetwork.InRoom || !isCountingDown)
         {
-            // A UI ainda precisa ser atualizada para mostrar a lista de jogadores
-            UpdateLobbyUI();
+            // A UI ainda precisa ser atualizada fora do countdown para mostrar a lista de jogadores
+            if (lobbyPanel.activeSelf) UpdateLobbyUI();
             return;
         }
 
-        // Logica de contagem regressiva (compartilhada por todos os clientes)
+        // Lógica de contagem regressiva (compartilhada por todos os clientes)
+        // Usa o tempo sincronizado do Photon
         double elapsed = PhotonNetwork.Time - startTime;
         remainingTime = Mathf.Max(0f, countdownDuration - (float)elapsed);
 
@@ -111,13 +99,14 @@ public class LobbyManager : MonoBehaviourPunCallbacks
         }
     }
 
-    // --- CALLBACKS DO PHOTON ---
+    // --- CALLBACKS DO PHOTON (Para MasterClient Controlar o Estado) ---
 
+    // Chamado quando um novo jogador entra (o MasterClient deve reagir)
     public override void OnPlayerEnteredRoom(Player newPlayer)
     {
         base.OnPlayerEnteredRoom(newPlayer);
 
-        // O MasterClient chama CheckStartConditions para ajustar o timer
+        // O MasterClient chama CheckStartConditions, que apenas INICIA O TIMER se for necessário.
         if (PhotonNetwork.IsMasterClient)
         {
             CheckStartConditions();
@@ -126,12 +115,12 @@ public class LobbyManager : MonoBehaviourPunCallbacks
         UpdateLobbyUI(); // Atualiza a lista de jogadores.
     }
 
+    // Chamado quando um jogador sai (o MasterClient deve reagir)
     public override void OnPlayerLeftRoom(Player otherPlayer)
     {
         base.OnPlayerLeftRoom(otherPlayer);
         if (PhotonNetwork.IsMasterClient)
         {
-            // Verifica se o timer precisa ser parado ou ajustado
             CheckStartConditions();
         }
         UpdateLobbyUI(); // Atualiza a lista de jogadores para todos
@@ -142,26 +131,31 @@ public class LobbyManager : MonoBehaviourPunCallbacks
     {
         base.OnRoomPropertiesUpdate(propertiesThatChanged);
 
-        // 1. Sincronização do GameStarted (gs)
+        // 2. Sincronização do GameStarted (gs)
+        // Se esta propriedade mudou, processamos primeiro o início do jogo.
         if (propertiesThatChanged.ContainsKey(CustomRoomProperties.GameStarted))
         {
             if ((bool)propertiesThatChanged[CustomRoomProperties.GameStarted])
             {
                 // Todos os clientes que recebem esta propriedade iniciam o jogo
                 GameStartLogic();
+
+                // Uma vez que o jogo começou, ignoramos as atualizações de tempo abaixo
                 return;
             }
         }
 
-        // Se o jogo já começou, ignora a sincronização de tempo.
+        // **CORREÇÃO 2: Verificação para evitar que o timer recomece após o jogo começar**
+        // Só processamos a atualização do StartTime se o jogo AINDA NÃO começou.
         if (PhotonNetwork.CurrentRoom.CustomProperties.ContainsKey(CustomRoomProperties.GameStarted) &&
             (bool)PhotonNetwork.CurrentRoom.CustomProperties[CustomRoomProperties.GameStarted])
         {
+            // O jogo já começou, ignorar qualquer redefinição de tempo.
             UpdateLobbyUI();
             return;
         }
 
-        // 2. Sincronização do StartTime (st)
+        // 1. Sincronização do StartTime (st)
         if (propertiesThatChanged.ContainsKey(CustomRoomProperties.StartTime))
         {
             object stValue = propertiesThatChanged[CustomRoomProperties.StartTime];
@@ -191,11 +185,12 @@ public class LobbyManager : MonoBehaviourPunCallbacks
             }
         }
 
+        // Atualiza a UI para todos os clientes (lista de jogadores, etc.)
         UpdateLobbyUI();
     }
 
 
-    // --- Logica DE INÍCIO DE JOGO (MASTER CLIENT APENAS) ---
+    // --- LÓGICA DE INÍCIO DE JOGO (MASTER CLIENT APENAS) ---
 
     // Verifica as condições de início e ajusta o timer (APENAS MasterClient)
     private void CheckStartConditions()
@@ -214,8 +209,7 @@ public class LobbyManager : MonoBehaviourPunCallbacks
         }
         else if (currentPlayers >= 2)
         {
-            // 90 segundos se a sala tiver 2 ou 3 jogadores.
-            SetStartTime(WAIT_TIME_FOR_SECOND_PLAYER);
+             SetStartTime(WAIT_TIME_FOR_SECOND_PLAYER);
         }
         else
         {
@@ -261,13 +255,15 @@ public class LobbyManager : MonoBehaviourPunCallbacks
 
         isCountingDown = false;
 
-        // O MasterClient define a propriedade da sala para que todos os clientes saibam que o jogo começou
+        // 1. O MasterClient define a propriedade da sala para que todos os clientes saibam que o jogo começou
         // (Isto aciona o GameStartLogic() via OnRoomPropertiesUpdate para TODOS)
         Hashtable props = new Hashtable { { CustomRoomProperties.GameStarted, true } };
         PhotonNetwork.CurrentRoom.SetCustomProperties(props);
+
+        // A chamada GameStartLogic() foi removida daqui, evitando a duplicação no Host.
     }
 
-    // --- Logica DE TRANSIÇÃO PARA O JOGO (TODOS OS CLIENTES) ---
+    // --- LÓGICA DE TRANSIÇÃO PARA O JOGO (TODOS OS CLIENTES) ---
 
     private void GameStartLogic()
     {
@@ -276,16 +272,13 @@ public class LobbyManager : MonoBehaviourPunCallbacks
 
         Debug.Log("Partida Iniciada! Removendo UI do Lobby e spawnando jogadores.");
 
-        // Ponto chave: Permite o movimento
+        // ESTE É O PONTO CHAVE: Permite o movimento agora
         GameStartedAndPlayerCanMove = true;
 
         // 1. Desativa a tela de espera
-        if (lobbyPanel != null)
-        {
-            lobbyPanel.SetActive(false);
-        }
+        lobbyPanel.SetActive(false);
 
-        // 2. Desativa a camera do Lobby
+        // 2. Desativa a câmera do Lobby AGORA que o jogador vai dar spawn
         if (RoomManager.instance != null && RoomManager.instance.roomCam != null)
         {
             RoomManager.instance.roomCam.SetActive(false);
@@ -298,14 +291,14 @@ public class LobbyManager : MonoBehaviourPunCallbacks
             RoomManager.instance.RespawnPlayer();
         }
 
-        // 4. Fecha a sala para novos jogadores (APENAS MasterClient)
-        if (PhotonNetwork.IsMasterClient && PhotonNetwork.CurrentRoom != null)
+        // 4. Fecha a sala para novos jogadores
+        if (PhotonNetwork.IsMasterClient)
         {
             PhotonNetwork.CurrentRoom.IsOpen = false;
         }
     }
 
-    // --- LOGICA DA UI ---
+    // --- LÓGICA DA UI ---
 
     // Atualiza a lista de jogadores e o estado de espera
     private void UpdateLobbyUI()
@@ -318,6 +311,7 @@ public class LobbyManager : MonoBehaviourPunCallbacks
             string players = $"Jogadores na Sala ({PhotonNetwork.CurrentRoom.PlayerCount}/{MAX_PLAYERS}):\n";
             foreach (Player p in PhotonNetwork.CurrentRoom.Players.Values)
             {
+                // Se o nickname estiver vazio, usa o ActorNumber como fallback
                 string nick = string.IsNullOrEmpty(p.NickName) ? $"Player {p.ActorNumber}" : p.NickName;
                 players += $"- **{nick}** {(p.IsMasterClient ? "(Host)" : "")}\n";
             }
@@ -328,23 +322,22 @@ public class LobbyManager : MonoBehaviourPunCallbacks
     // Atualiza o texto do timer
     private void UpdateCountdownUI(float time)
     {
-        if (countdownText == null) return;
-
-        // Se a contagem parou ou o jogo começou, mostra uma mensagem estética
+        // Se a contagem parou ou o jogo começou, mostra uma mensagem estática
         if (!isCountingDown || time <= 0)
         {
             if (PhotonNetwork.CurrentRoom.PlayerCount < 2)
             {
-                countdownText.text = $"Aguardando 1º jogador...\n(Mínimo de 2 para começar)";
+                countdownText.text = $"Aguardando 1° jogador...\n(Mínimo de 2 para começar)";
             }
             else if (PhotonNetwork.CurrentRoom.PlayerCount >= 2 && !isCountingDown)
             {
+                // Mensagem caso o timer tenha sido parado (ex: alguém saiu e o count caiu para 1)
                 countdownText.text = $"Partida em espera. Contagem regressiva parada.";
             }
             return;
         }
 
-        // Formata o tempo (Minutos:Segundos)
+        // Formata o tempo
         int minutes = Mathf.FloorToInt(time / 60f);
         int seconds = Mathf.FloorToInt(time % 60f);
 

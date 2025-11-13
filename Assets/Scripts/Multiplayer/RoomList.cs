@@ -14,25 +14,12 @@ public class RoomList : MonoBehaviourPunCallbacks
     public Transform roomListParent;
     public GameObject roomListItemPrefab;
 
-    // !!! NOVAS VARIÁVEIS ADICIONADAS !!!
     [Header("UI (Painéis)")]
-    public GameObject lobbyPanel; // O painel "Choose a game"
-    public GameObject createRoomPanel; // O painel "Pick a room name"
-    // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    public GameObject lobbyPanel; // O painel "Choose a game" (Visão das salas)
+    public GameObject createRoomPanel; // O painel "Pick a room name" (Criação de sala)
 
     private List<RoomInfo> cachedRoomList = new List<RoomInfo>();
     private string cachedRoomNameToCreate;
-
-    public void ChangeRoomToCreateName(string _roomName)
-    {
-        cachedRoomNameToCreate = _roomName;
-    }
-
-    public void CreateRoomByIndex(int sceneIndex)
-    {
-        // Esta função está perfeita para os teus botões "Create Room in Arena 1/2"
-        JoinRoomByName(cachedRoomNameToCreate, sceneIndex);
-    }
 
     private void Awake()
     {
@@ -41,60 +28,119 @@ public class RoomList : MonoBehaviourPunCallbacks
 
     IEnumerator Start()
     {
-        // Boa prática: garantir que o painel de lobby está visível
-        // e o de criar sala está escondido ao iniciar.
+        // Garante que o painel de lobby está visível e o de criar sala está escondido
         if (lobbyPanel != null) lobbyPanel.SetActive(true);
         if (createRoomPanel != null) createRoomPanel.SetActive(false);
 
-        // Precautions
+        // Precautions: Se for persistente e já estiver numa sala, sai e desconecta
         if (PhotonNetwork.InRoom)
         {
             PhotonNetwork.LeaveRoom();
-            PhotonNetwork.Disconnect();
+            // NUNCA chamar disconnect aqui se o RoomManager for carregar a cena após a desconexão.
+            // Apenas o RoomManager deve controlar a desconexão/conexão global do jogo.
         }
 
-        yield return new WaitUntil(() => !PhotonNetwork.IsConnected);
-
-        PhotonNetwork.ConnectUsingSettings();
+        // Se você precisa do RoomList para gerenciar a conexão ao Photon Lobby:
+        if (!PhotonNetwork.IsConnected)
+        {
+            yield return new WaitUntil(() => !PhotonNetwork.IsConnected);
+            PhotonNetwork.ConnectUsingSettings();
+        }
     }
 
     public override void OnConnectedToMaster()
     {
         base.OnConnectedToMaster();
-        Debug.Log("Connected to Master Server");
+        Debug.Log("Connected to Master Server. Joining Lobby...");
         PhotonNetwork.JoinLobby();
     }
 
-    public override void OnRoomListUpdate(List<RoomInfo> roomList)
+    // --- Funções de Criação e Entrada em Sala ---
+
+    public void ChangeRoomToCreateName(string _roomName)
     {
-        // ... (o resto desta função está igual e correto) ...
-        if (cachedRoomList.Count <= 0)
+        cachedRoomNameToCreate = _roomName;
+    }
+
+    public void CreateRoomByIndex(int sceneIndex)
+    {
+        JoinRoomByName(cachedRoomNameToCreate, sceneIndex);
+    }
+
+    public void JoinRoomByName(string _name, int _sceneIndex)
+    {
+        PlayerPrefs.SetString("RoomNameToJoin", _name);
+
+        // Carrega a cena onde o RoomManager existe para que ele possa entrar na sala.
+        SceneManager.LoadScene(_sceneIndex);
+    }
+
+    // --- Controlo de Painéis ---
+
+    public void ShowCreateRoomPanel()
+    {
+        if (lobbyPanel != null) lobbyPanel.SetActive(false);
+        if (createRoomPanel != null) createRoomPanel.SetActive(true);
+    }
+
+    public void GoBackToLobbyPanel()
+    {
+        if (createRoomPanel != null) createRoomPanel.SetActive(false);
+        if (lobbyPanel != null) lobbyPanel.SetActive(true);
+    }
+
+    // --- FUNÇÃO CORRIGIDA PARA REGRESSAR AO MENU PRINCIPAL ---
+
+    /**
+     * Esta função é chamada quando o utilizador quer sair do lobby/lista de salas e voltar para a Cena 1.
+     * Ela delega a limpeza e o carregamento da cena ao RoomManager (se ele estiver persistente)
+     * para garantir que não há UI sobreposta.
+     */
+    public void GoBackToMainMenu()
+    {
+        // 1. Tenta usar o RoomManager (se ele for persistente da Cena 3 e ainda estiver ativo)
+        if (RoomManager.instance != null)
         {
-            cachedRoomList = roomList;
+            Debug.Log("RoomList chamando RoomManager para gerir o retorno e limpeza.");
+
+            // O RoomManager irá desconectar o Photon, destruir a si próprio e o LobbyManager, 
+            // e carregar o MainMenu.
+            RoomManager.instance.GoToMainMenu();
         }
         else
         {
-            foreach (var room in roomList)
+            // 2. Se o RoomManager não estiver ativo (p. ex., se esta cena foi chamada diretamente
+            //    do Main Menu e estamos apenas conectados ao Photon Lobby),
+            //    desconectamos e carregamos a cena MainMenu diretamente.
+            if (PhotonNetwork.IsConnected)
             {
-                for (int i = 0; i < cachedRoomList.Count; i++)
-                {
-                    if (cachedRoomList[i].Name == room.Name)
-                    {
-                        List<RoomInfo> newList = cachedRoomList;
-
-                        if (room.RemovedFromList)
-                        {
-                            newList.Remove(newList[i]);
-                        }
-                        else
-                        {
-                            newList[i] = room;
-                        }
-
-                        cachedRoomList = newList;
-                    }
-                }
+                Debug.Log("RoomList desconectando do Photon e carregando MainMenu.");
+                PhotonNetwork.Disconnect();
             }
+            SceneManager.LoadScene("MainMenu");
+        }
+    }
+
+    // --- Callbacks do Photon (Listagem de Salas) ---
+
+    public override void OnRoomListUpdate(List<RoomInfo> roomList)
+    {
+        // Limpa a lista cacheada e a UI
+        foreach (Transform roomItem in roomListParent)
+        {
+            Destroy(roomItem.gameObject);
+        }
+        cachedRoomList.Clear();
+
+        // Atualiza a lista cacheada
+        foreach (var room in roomList)
+        {
+            if (room.RemovedFromList)
+            {
+                // Sala removida
+                continue;
+            }
+            cachedRoomList.Add(room);
         }
 
         UpdateUI();
@@ -102,85 +148,43 @@ public class RoomList : MonoBehaviourPunCallbacks
 
     void UpdateUI()
     {
-        // ... (o resto desta função está igual e correto) ...
+        if (roomListParent == null || roomListItemPrefab == null) return;
+
+        // Limpa a UI
         foreach (Transform roomItem in roomListParent)
         {
             Destroy(roomItem.gameObject);
         }
 
+        // Recria os itens da UI
         foreach (var room in cachedRoomList)
         {
+            // Assumimos que o código de criação de RoomItemButton está correto...
             GameObject roomItem = Instantiate(roomListItemPrefab, roomListParent);
 
             string roomMapName = "Unknown";
+            object sceneIndexObject;
+            int roomSceneIndex = 1;
 
-            object mapNameObject;
-            if (room.CustomProperties.TryGetValue("mapName", out mapNameObject))
+            // Tenta obter o nome do mapa
+            if (room.CustomProperties.TryGetValue("mapName", out object mapNameObject))
             {
                 roomMapName = (string)mapNameObject;
             }
 
-            roomItem.transform.GetChild(0).GetComponent<TextMeshProUGUI>().text = room.Name + "(" + roomMapName + ")";
-            roomItem.transform.GetChild(1).GetComponent<TextMeshProUGUI>().text = room.PlayerCount + " /4";
-
-            roomItem.GetComponent<RoomItemButton>().RoomName = room.Name;
-
-            int roomSceneIndex = 1;
-
-            object sceneIndexObject;
+            // Tenta obter o índice da cena (para o JoinRoomByName)
             if (room.CustomProperties.TryGetValue("mapSceneIndex", out sceneIndexObject))
             {
                 roomSceneIndex = (int)sceneIndexObject;
             }
 
+            // Atualiza os TextMeshPro
+            roomItem.transform.GetChild(0).GetComponent<TextMeshProUGUI>().text = $"{room.Name} ({roomMapName})";
+            roomItem.transform.GetChild(1).GetComponent<TextMeshProUGUI>().text = $"{room.PlayerCount} /4";
+
+            // Configura os dados no componente RoomItemButton (assumindo que existe)
+            roomItem.GetComponent<RoomItemButton>().RoomName = room.Name;
             roomItem.GetComponent<RoomItemButton>().SceneIndex = roomSceneIndex;
         }
-    }
-
-    public void JoinRoomByName(string _name, int _sceneIndex)
-    {
-        PlayerPrefs.SetString("RoomNameToJoin", _name);
-
-        // Esta linha pode dar problemas se o script estiver no mesmo objeto
-        // que os painéis. Se o menu desaparecer, remove a linha abaixo.
-        // gameObject.SetActive(false); 
-
-        SceneManager.LoadScene(_sceneIndex);
-        // Load the relavant room 
-    }
-
-
-    // Esta função é para o "Back" do Lobby -> Menu Principal
-    public void GoBackToMainMenu()
-    {
-        if (PhotonNetwork.IsConnected)
-        {
-            PhotonNetwork.Disconnect();
-        }
-        SceneManager.LoadScene("MainMenu"); // Continua correta
-    }
-
-    //
-    // !!! NOVAS FUNÇÕES ADICIONADAS !!!
-    //
-
-    /**
-     * Esta função é para o botão "Create a room" (no LobbyPanel).
-     * Esconde o Lobby e mostra o painel de criação de sala.
-     */
-    public void ShowCreateRoomPanel()
-    {
-        if (lobbyPanel != null) lobbyPanel.SetActive(false);
-        if (createRoomPanel != null) createRoomPanel.SetActive(true);
-    }
-
-    /**
-     * Esta função é para o botão "Back" (no CreateRoomPanel).
-     * Esconde o painel de criação e volta a mostrar o Lobby.
-     */
-    public void GoBackToLobbyPanel()
-    {
-        if (createRoomPanel != null) createRoomPanel.SetActive(false);
-        if (lobbyPanel != null) lobbyPanel.SetActive(true);
     }
 }
