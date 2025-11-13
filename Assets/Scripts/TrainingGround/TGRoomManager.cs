@@ -35,16 +35,13 @@ public class TGRoomManager : MonoBehaviourPunCallbacks
     void Start()
     {
         Debug.Log("Connecting...");
-
         PhotonNetwork.ConnectUsingSettings();
     }
 
     public override void OnConnectedToMaster()
     {
         base.OnConnectedToMaster();
-
         Debug.Log("Connected to Master");
-
         PhotonNetwork.JoinLobby();
     }
 
@@ -52,14 +49,31 @@ public class TGRoomManager : MonoBehaviourPunCallbacks
     {
         base.OnJoinedLobby();
 
-        Debug.Log("Joined Training Ground");
+        Debug.Log("Joined Training Ground Lobby");
 
-        PhotonNetwork.JoinOrCreateRoom("TrainingGroundRoom", new Photon.Realtime.RoomOptions { MaxPlayers = 1 }, null);
+        // 1. Cria as opções da sala
+        Photon.Realtime.RoomOptions roomOptions = new Photon.Realtime.RoomOptions
+        {
+            MaxPlayers = 1,              // Limita a 1 jogador (tu)
+            IsVisible = false,           // Torna a sala INVISÍVEL no Lobby e exclui de JoinRandomRoom
+            IsOpen = true                // Mantém a sala aberta para que possas entrar pelo nome
+        };
+
+        // 2. Tenta entrar ou criar a sala com as novas opções
+        PhotonNetwork.JoinOrCreateRoom("TrainingGroundRoom", roomOptions, null);
     }
 
     public override void OnJoinedRoom()
     {
         base.OnJoinedRoom();
+
+        // NOVO: Fecha a sala para impedir que mais alguém entre
+        // (Isto só funciona se IsMasterClient for true, o que és, pois criaste/entraste)
+        if (PhotonNetwork.IsMasterClient && PhotonNetwork.CurrentRoom != null)
+        {
+            PhotonNetwork.CurrentRoom.IsOpen = false;
+            Debug.Log("Sala fechada. Ninguém mais pode entrar (IsOpen = false).");
+        }
 
         Debug.Log("Player has joined the Training Ground");
 
@@ -106,18 +120,25 @@ public class TGRoomManager : MonoBehaviourPunCallbacks
             health.isLocalPlayer = true;
     }
 
-    // --- Enemy Spawn ---
+    // -------------------------------------------------------------
+    // --- Lógica de Spawn e Respawn de Inimigos (Modificada) ---
+    // -------------------------------------------------------------
+
     private void SpawnInitialEnemies()
     {
         activeEnemies.Clear();
 
-        for (int i = 0; i < enemyCount; i++)
+        // Limita o número de inimigos ao número de pontos de spawn disponíveis
+        int enemiesToSpawn = Mathf.Min(enemyCount, enemySpawnPoints.Length);
+
+        for (int i = 0; i < enemiesToSpawn; i++)
         {
-            Transform spawnPoint = enemySpawnPoints[i % enemySpawnPoints.Length];
+            // Usa o índice 'i' para garantir que cada inimigo usa o seu próprio ponto de spawn (0, 1, 2...)
+            Transform spawnPoint = enemySpawnPoints[i];
 
             SpawnSingleEnemy(spawnPoint.position);
         }
-        Debug.Log($"Master Client spawnou {enemyCount} inimigos.");
+        Debug.Log($"Master Client spawnou {enemiesToSpawn} inimigos nos seus pontos designados.");
     }
 
     private void SpawnSingleEnemy(Vector3 position)
@@ -142,9 +163,10 @@ public class TGRoomManager : MonoBehaviourPunCallbacks
 
         Debug.Log($"Inimigo foi destruído. Respawn agendado em {enemyRespawnDelay} segundos.");
 
-        Transform spawnPoint = enemySpawnPoints[UnityEngine.Random.Range(0, enemySpawnPoints.Length)];
+        // Encontra o ponto de spawn original mais próximo da posição de morte
+        Vector3 respawnPosition = FindClosestSpawnPoint(deathPosition);
 
-        StartCoroutine(EnemyRespawnRoutine(enemyRespawnDelay, spawnPoint.position));
+        StartCoroutine(EnemyRespawnRoutine(enemyRespawnDelay, respawnPosition));
     }
 
     private IEnumerator EnemyRespawnRoutine(float delay, Vector3 position)
@@ -156,5 +178,31 @@ public class TGRoomManager : MonoBehaviourPunCallbacks
             SpawnSingleEnemy(position);
             Debug.Log("Inimigo respawnado.");
         }
+    }
+
+    /// <summary>
+    /// Encontra o ponto de spawn original que está mais próximo da posição de morte do inimigo.
+    /// </summary>
+    private Vector3 FindClosestSpawnPoint(Vector3 deathPosition)
+    {
+        if (enemySpawnPoints == null || enemySpawnPoints.Length == 0)
+        {
+            Debug.LogError("Nenhum ponto de spawn de inimigo atribuído!");
+            return deathPosition;
+        }
+
+        Transform closestPoint = enemySpawnPoints[0];
+        float minDistance = Vector3.Distance(deathPosition, closestPoint.position);
+
+        for (int i = 1; i < enemySpawnPoints.Length; i++)
+        {
+            float distance = Vector3.Distance(deathPosition, enemySpawnPoints[i].position);
+            if (distance < minDistance)
+            {
+                minDistance = distance;
+                closestPoint = enemySpawnPoints[i];
+            }
+        }
+        return closestPoint.position;
     }
 }

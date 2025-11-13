@@ -21,14 +21,14 @@ public class EnemyAI : MonoBehaviourPunCallbacks
 
     [Header("Geral")]
     public AIState currentState;
-    public float chaseRange = 8f;
-    public float attackRange = 1.5f;
-    public float moveSpeed = 3f;
+    public float chaseRange;
+    public float attackRange;
+    public float moveSpeed;
 
     [Header("Patrulha")]
-    public float patrolSpeed = 1.5f;
-    public float edgeCheckDistance = 0.6f;
-    public float wallCheckDistancePatrol = 0.5f;
+    public float patrolSpeed;
+    public float edgeCheckDistance;
+    public float wallCheckDistancePatrol;
     public Transform groundCheckPoint;
     public LayerMask groundLayer;
 
@@ -39,10 +39,10 @@ public class EnemyAI : MonoBehaviourPunCallbacks
     public float wallCheckDistanceChase = 0.5f;
 
     [Header("Combate / Knockback")]
-    public float knockbackForce = 15f;
-    public float stunTime = 0.5f;
-    public int attackDamage = 10;           // Dano que o inimigo causa
-    public float attackCooldown = 1.0f;     // Tempo entre ataques do inimigo
+    public float knockbackForce;
+    public float stunTime;
+    public int attackDamage;           // Dano que o inimigo causa
+    public float attackCooldown;     // Tempo entre ataques do inimigo
 
     // NOVA VARIÁVEL: Define a distância exata que o ponto de ataque deve estar do centro.
     public float attackOffsetDistance = 0.5f;

@@ -231,10 +231,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   currentState: 0
   chaseRange: 8
-  attackRange: 1.5
+  attackRange: 1
   moveSpeed: 3
   patrolSpeed: 1.5
-  edgeCheckDistance: 0.6
+  edgeCheckDistance: 5
   wallCheckDistancePatrol: 0.5
   groundCheckPoint: {fileID: 1221493521691430934}
   groundLayer:
@@ -246,8 +246,8 @@ MonoBehaviour:
   wallCheckDistanceChase: 0.5
   knockbackForce: 15
   stunTime: 0.5
-  attackDamage: 10
-  attackCooldown: 1
+  attackDamage: 7
+  attackCooldown: 1.5
   attackOffsetDistance: 0.5
   attackPoint: {fileID: 997426437899963308}
   playerLayer:

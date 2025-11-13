@@ -80,9 +80,9 @@ public class Movement2D : MonoBehaviour
             );
         }
 
-        // --- 0. VERIFICAÇÃO DO LOBBY & KNOCKBACK ---
-        // Se o jogo não começou OU estiver em Knockback, bloqueia todo o controlo de input.
-        if (!LobbyManager.GameStartedAndPlayerCanMove || isKnockedBack)
+        // --- MUDANÇA AQUI: REMOÇÃO DA DEPENDÊNCIA DO LOBBY MANAGER ---
+        // Se estiver em Knockback, bloqueia todo o controlo de input.
+        if (isKnockedBack)
         {
             // Parar completamente o movimento horizontal
             if (rb != null)
@@ -99,7 +99,7 @@ public class Movement2D : MonoBehaviour
         }
 
 
-        // Se chegámos aqui, o controlo está ATIVO (jogo começou e não está em Knockback).
+        // Se chegámos aqui, o controlo está ATIVO.
 
         // 2. LÓGICA DE RESET DE SALTO
         // Se está no chão E está quase parado verticalmente, reseta o salto
@@ -109,6 +109,7 @@ public class Movement2D : MonoBehaviour
         }
 
         float move = 0f;
+        // Assume que CombatSystem2D existe
         bool isDefending = (combatSystem != null && combatSystem.isDefending);
 
         // 3. LÓGICA DE MOVIMENTO E SALTO (SÓ se NÃO estiver a defender)

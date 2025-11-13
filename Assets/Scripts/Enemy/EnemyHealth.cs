@@ -1,7 +1,7 @@
 using UnityEngine;
 using Photon.Pun;
 using System.Collections;
-using TMPro;
+using TMPro; // Certifica-te que tens o TextMeshPro importado se o usares
 
 [RequireComponent(typeof(PhotonView), typeof(EnemyAI))]
 public class EnemyHealth : MonoBehaviourPunCallbacks
@@ -48,7 +48,8 @@ public class EnemyHealth : MonoBehaviourPunCallbacks
         currentHealth -= _damage;
         UpdateHealthBar();
 
-        Debug.Log($"{gameObject.name} (Inimigo) recebeu {_damage} de dano. Vida restante: {currentHealth}");
+        // DEBUG PARA MOSTRAR A VIDA
+        Debug.Log($"[EnemyHealth] {gameObject.name} (Inimigo) recebeu {_damage} de dano. Vida restante: {currentHealth}/{maxHealth}");
 
         // --- LÓGICA DE KNOCKBACK E STUN ---
         // Se ainda estiver vivo e se o Master Client estiver a executar (para controle de física)
