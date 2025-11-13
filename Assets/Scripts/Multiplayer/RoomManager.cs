@@ -32,6 +32,9 @@ public class RoomManager : MonoBehaviourPunCallbacks
 
     public string mapName = "Noname";
 
+    // <-- ADICIONADO
+    private bool returningToMenu = false; // Flag para saber se estamos a voltar ao menu
+
     void Awake()
     {
         // Garante que haja apenas uma instância do RoomManager
@@ -84,6 +87,26 @@ public class RoomManager : MonoBehaviourPunCallbacks
         }
     }
 
+    // <-- ADICIONADO (Função completa)
+    // Função para ser chamada pelo BackButton
+    public void GoToMainMenu()
+    {
+        // 1. Ativa a flag para sabermos que estamos a voltar ao menu
+        returningToMenu = true;
+
+        // 2. Tenta desconectar, se estivermos conectados
+        if (PhotonNetwork.IsConnected)
+        {
+            PhotonNetwork.Disconnect();
+        }
+        // 3. Se não estivermos conectados, podemos simplesmente destruir e carregar
+        else
+        {
+            Destroy(this.gameObject);
+            SceneManager.LoadScene("MainMenu");
+        }
+    }
+
     // Lógica para criar ou entrar numa sala
     private void JoinRoomLogic()
     {
@@ -120,12 +143,25 @@ public class RoomManager : MonoBehaviourPunCallbacks
         JoinRoomLogic();
     }
 
+    // <-- MODIFICADO (Função inteira)
     public override void OnDisconnected(DisconnectCause cause)
     {
         base.OnDisconnected(cause);
         Debug.LogError($"Desconectado. Causa: {cause}");
-        connectigUI.SetActive(false);
-        nameUI.SetActive(true);
+
+        // SE a desconexão foi porque o utilizador clicou em "Voltar"
+        if (returningToMenu)
+        {
+            // 4. Agora sim, destrói o RoomManager e carrega o menu
+            Destroy(this.gameObject);
+            SceneManager.LoadScene("MainMenu");
+        }
+        // Senão, foi uma desconexão inesperada (ex: falha de rede)
+        else
+        {
+            connectigUI.SetActive(false);
+            nameUI.SetActive(true);
+        }
     }
 
     // **FUNÇÃO CHAVE:** Não dá spawn diretamente; apenas passa o controle ao LobbyManager.

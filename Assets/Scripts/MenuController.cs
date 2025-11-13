@@ -11,11 +11,21 @@ public class MenuController : MonoBehaviour
     [SerializeField] private string multiplayerSceneName = "MultiplayerLobby";
     [SerializeField] private string characterSelectSceneName = "CharacterSelect";
     [SerializeField] private string trainingSceneName = "TrainingGround";
+
     private void Awake()
     {
-        // Garante estados iniciais
-        if (mainButtonsPanel != null) mainButtonsPanel.SetActive(true);
-        if (playOptionsPanel != null) playOptionsPanel.SetActive(false);
+        // Apenas para garantir que o objeto que contém o MenuController está ativo.
+        // Isso é um fallback de segurança se o pai estiver desativado.
+        if (!gameObject.activeSelf)
+        {
+            gameObject.SetActive(true);
+        }
+    }
+
+    private void Start() // <-- O Unity chama o Start() APÓS a cena carregar
+    {
+        // A lógica de TogglePanels deve estar aqui para forçar a ativação do painel principal
+        TogglePanels(true, false); // Garante que o painel principal esteja ativo e o submenu desativo
     }
 
     // ---------- Botões do menu principal ----------

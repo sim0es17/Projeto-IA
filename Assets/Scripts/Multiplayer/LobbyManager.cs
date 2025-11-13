@@ -20,23 +20,22 @@ public class LobbyManager : MonoBehaviourPunCallbacks
     public static LobbyManager instance;
 
     // --- NOVO FLAG PARA CONTROLE DE MOVIMENTO ---
-    // Outros scripts (como o de movimento) podem ler este flag para saber se podem agir.
     public static bool GameStartedAndPlayerCanMove = false;
 
     // --- Configurações de Tempo ---
     private const int MAX_PLAYERS = 4;
     private const float WAIT_TIME_FOR_SECOND_PLAYER = 90f; // 90 segundos para 2+ jogadores
-    private const float WAIT_TIME_FULL_ROOM = 5f;         // 5 segundos se a sala estiver cheia (4/4)
+    private const float WAIT_TIME_FULL_ROOM = 5f;          // 5 segundos se a sala estiver cheia (4/4)
 
     // --- Variáveis de Sincronização e Estado ---
     private bool isCountingDown = false;
-    private double startTime;             // O tempo real do Photon em que a contagem começou
-    private float countdownDuration;      // Duração total da contagem regressiva (90s ou 5s)
-    private float remainingTime;          // Tempo restante no countdown
+    private double startTime;              // O tempo real do Photon em que a contagem começou
+    private float countdownDuration;       // Duração total da contagem regressiva (90s ou 5s)
+    private float remainingTime;           // Tempo restante no countdown
 
     // --- Referências UI (Anexar no Inspector) ---
     [Header("UI Elements")]
-    public GameObject lobbyPanel;         // O painel que contém toda a UI do lobby (ativar/desativar)
+    public GameObject lobbyPanel;          // O painel que contém toda a UI do lobby (ativar/desativar)
     public TMPro.TextMeshProUGUI countdownText;     // Texto para mostrar o tempo restante
     public TMPro.TextMeshProUGUI playerListText;    // Texto para mostrar a lista de jogadores
 
@@ -50,8 +49,7 @@ public class LobbyManager : MonoBehaviourPunCallbacks
         }
         instance = this;
 
-        // **CORREÇÃO 1: Garante que o movimento esteja desativado por padrão ao carregar a cena**
-        // Isto previne o spawn e movimento imediatos do Player 1 se o seu script de movimento estiver a verificar esta variável.
+        // Garante que o movimento esteja desativado por padrão ao carregar a cena
         GameStartedAndPlayerCanMove = false;
     }
 
@@ -76,10 +74,21 @@ public class LobbyManager : MonoBehaviourPunCallbacks
     // --- UPDATE LOOP (Lógica de Contagem) ---
     void Update()
     {
+        // <-- CORREÇÃO 1: VERIFICAR ROOMMANAGER
+        // Se o RoomManager foi destruído, saímos do Update para evitar o MissingReferenceException.
+        if (RoomManager.instance == null)
+        {
+            // O LobbyManager também não deve ser necessário se o RoomManager não existir,
+            // mas fazemos a verificação para estabilidade.
+            return;
+        }
+
         // Só executa a lógica de contagem se estiver na sala e o timer estiver ativo
         if (!PhotonNetwork.InRoom || !isCountingDown)
         {
             // A UI ainda precisa ser atualizada fora do countdown para mostrar a lista de jogadores
+            // Linha 96 Original: if (lobbyPanel.activeSelf) UpdateLobbyUI();
+            // A chamada a .activeSelf no lobbyPanel é segura, pois ele está no LobbyManager.
             if (lobbyPanel.activeSelf) UpdateLobbyUI();
             return;
         }
@@ -145,8 +154,7 @@ public class LobbyManager : MonoBehaviourPunCallbacks
             }
         }
 
-        // **CORREÇÃO 2: Verificação para evitar que o timer recomece após o jogo começar**
-        // Só processamos a atualização do StartTime se o jogo AINDA NÃO começou.
+        // Verificação para evitar que o timer recomece após o jogo começar
         if (PhotonNetwork.CurrentRoom.CustomProperties.ContainsKey(CustomRoomProperties.GameStarted) &&
             (bool)PhotonNetwork.CurrentRoom.CustomProperties[CustomRoomProperties.GameStarted])
         {
@@ -209,7 +217,7 @@ public class LobbyManager : MonoBehaviourPunCallbacks
         }
         else if (currentPlayers >= 2)
         {
-             SetStartTime(WAIT_TIME_FOR_SECOND_PLAYER);
+            SetStartTime(WAIT_TIME_FOR_SECOND_PLAYER);
         }
         else
         {
@@ -279,12 +287,14 @@ public class LobbyManager : MonoBehaviourPunCallbacks
         lobbyPanel.SetActive(false);
 
         // 2. Desativa a câmera do Lobby AGORA que o jogador vai dar spawn
+        // <-- CORREÇÃO 2: Verificação de segurança adicionada
         if (RoomManager.instance != null && RoomManager.instance.roomCam != null)
         {
             RoomManager.instance.roomCam.SetActive(false);
         }
 
         // 3. Permite que o RoomManager spawne o jogador local.
+        // <-- CORREÇÃO 3: Verificação de segurança adicionada
         if (RoomManager.instance != null)
         {
             RoomManager.instance.SetInitialRespawnCount(PhotonNetwork.LocalPlayer);
