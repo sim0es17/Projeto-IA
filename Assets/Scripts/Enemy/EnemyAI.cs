@@ -1,3 +1,4 @@
+//EnemyAI
 using UnityEngine;
 using System.Collections;
 using Photon.Pun;
@@ -41,14 +42,14 @@ public class EnemyAI : MonoBehaviourPunCallbacks
     [Header("Combate / Knockback")]
     public float knockbackForce;
     public float stunTime;
-    public int attackDamage;           // Dano que o inimigo causa
-    public float attackCooldown;     // Tempo entre ataques do inimigo
+    public int attackDamage;            // Dano que o inimigo causa
+    public float attackCooldown;      // Tempo entre ataques do inimigo
 
     // NOVA VARIÁVEL: Define a distância exata que o ponto de ataque deve estar do centro.
     public float attackOffsetDistance = 0.5f;
 
-    public Transform attackPoint;           // Ponto de origem do ataque do inimigo (filho do Enemy)
-    public LayerMask playerLayer;           // Camada do Jogador
+    public Transform attackPoint;             // Ponto de origem do ataque do inimigo (filho do Enemy)
+    public LayerMask playerLayer;             // Camada do Jogador
 
     // --- Propriedades para acesso externo (EnemyHealth) ---
     public float KnockbackForce => knockbackForce;
@@ -146,7 +147,8 @@ public class EnemyAI : MonoBehaviourPunCallbacks
 
         FlipSprite(direction);
 
-        if (playerTarget != null && Vector2.Distance(transform.position, playerTarget.position) < chaseRange)
+        // ** ALTERAÇÃO AQUI **: Verifica se pode ver o player antes de começar a perseguição.
+        if (CanSeePlayer())
         {
             currentState = AIState.Chase;
         }
@@ -169,7 +171,8 @@ public class EnemyAI : MonoBehaviourPunCallbacks
             currentState = AIState.Attack;
             return;
         }
-        else if (distance > chaseRange * 1.5f)
+        // ** ALTERAÇÃO AQUI **: Retorna ao Patrol se estiver demasiado longe OU se a linha de visão for bloqueada.
+        else if (distance > chaseRange * 1.5f || !CanSeePlayer())
         {
             currentState = AIState.Patrol;
             return;
@@ -284,6 +287,30 @@ public class EnemyAI : MonoBehaviourPunCallbacks
 
     // --- 7. UTILS & COROUTINES ---
 
+    // ** NOVA FUNÇÃO **: Verifica a linha de visão usando Raycasting.
+    bool CanSeePlayer()
+    {
+        if (playerTarget == null) return false;
+
+        Vector2 selfPos = transform.position;
+        Vector2 targetPos = playerTarget.position;
+
+        // 1. Verificação de Distância (Rápida)
+        float distance = Vector2.Distance(selfPos, targetPos);
+        if (distance > chaseRange)
+        {
+            return false;
+        }
+
+        // 2. Verificação de Linha de Visão (Linecast)
+        // Lança um raio da posição do inimigo até o jogador, mas SÓ verifica a 'groundLayer'
+        RaycastHit2D hit = Physics2D.Linecast(selfPos, targetPos, groundLayer);
+
+        // Se 'hit.collider' for null, significa que o raio não atingiu NENHUM objeto
+        // na groundLayer no caminho, ou seja, a linha de visão está limpa.
+        return hit.collider == null;
+    }
+
     bool CheckGrounded()
     {
         return Physics2D.Raycast(transform.position, Vector2.down, 0.1f, groundLayer);
@@ -326,5 +353,12 @@ public class EnemyAI : MonoBehaviourPunCallbacks
 
         Gizmos.color = Color.yellow;
         Gizmos.DrawWireSphere(transform.position, chaseRange);
+
+        // Desenha a linha de visao quando o inimigo esta no modo Patrol
+        if (playerTarget != null && currentState == AIState.Patrol)
+        {
+            Gizmos.color = CanSeePlayer() ? Color.green : Color.red;
+            Gizmos.DrawLine(transform.position, playerTarget.position);
+        }
     }
 }

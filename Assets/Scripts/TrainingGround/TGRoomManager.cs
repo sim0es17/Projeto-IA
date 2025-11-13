@@ -17,10 +17,16 @@ public class TGRoomManager : MonoBehaviourPunCallbacks
     public int enemyCount = 3;
     public float enemyRespawnDelay = 5f;
 
+    // Define o limite de respawns
+    public int maxRespawnsPerEnemy = 2;
+
     [Space]
     public GameObject tgRoomCam;
 
     private List<GameObject> activeEnemies = new List<GameObject>();
+
+    // Array para guardar a contagem de cada spawn point
+    private int[] enemyRespawnCounts;
 
     void Awake()
     {
@@ -48,18 +54,16 @@ public class TGRoomManager : MonoBehaviourPunCallbacks
     public override void OnJoinedLobby()
     {
         base.OnJoinedLobby();
-
         Debug.Log("Joined Training Ground Lobby");
 
-        // 1. Cria as opções da sala
+        // Opções para sala privada, invisível e com 1 jogador
         Photon.Realtime.RoomOptions roomOptions = new Photon.Realtime.RoomOptions
         {
-            MaxPlayers = 1,              // Limita a 1 jogador (tu)
-            IsVisible = false,           // Torna a sala INVISÍVEL no Lobby e exclui de JoinRandomRoom
-            IsOpen = true                // Mantém a sala aberta para que possas entrar pelo nome
+            MaxPlayers = 1,
+            IsVisible = false, // Invisível no Lobby
+            IsOpen = true      // Aberta para tu entrares
         };
 
-        // 2. Tenta entrar ou criar a sala com as novas opções
         PhotonNetwork.JoinOrCreateRoom("TrainingGroundRoom", roomOptions, null);
     }
 
@@ -67,8 +71,7 @@ public class TGRoomManager : MonoBehaviourPunCallbacks
     {
         base.OnJoinedRoom();
 
-        // NOVO: Fecha a sala para impedir que mais alguém entre
-        // (Isto só funciona se IsMasterClient for true, o que és, pois criaste/entraste)
+        // Fecha a sala imediatamente após entrar
         if (PhotonNetwork.IsMasterClient && PhotonNetwork.CurrentRoom != null)
         {
             PhotonNetwork.CurrentRoom.IsOpen = false;
@@ -120,34 +123,46 @@ public class TGRoomManager : MonoBehaviourPunCallbacks
             health.isLocalPlayer = true;
     }
 
-    // -------------------------------------------------------------
-    // --- Lógica de Spawn e Respawn de Inimigos (Modificada) ---
-    // -------------------------------------------------------------
+    // -----------------------------------------------------------------
+    // --- Lógica de Spawn e Respawn de Inimigos (com Limite) ---
+    // -----------------------------------------------------------------
 
     private void SpawnInitialEnemies()
     {
         activeEnemies.Clear();
 
-        // Limita o número de inimigos ao número de pontos de spawn disponíveis
         int enemiesToSpawn = Mathf.Min(enemyCount, enemySpawnPoints.Length);
+
+        // Inicializa o array de contagens
+        enemyRespawnCounts = new int[enemiesToSpawn];
 
         for (int i = 0; i < enemiesToSpawn; i++)
         {
-            // Usa o índice 'i' para garantir que cada inimigo usa o seu próprio ponto de spawn (0, 1, 2...)
+            // Define a contagem inicial para este spawn point
+            enemyRespawnCounts[i] = maxRespawnsPerEnemy;
+
             Transform spawnPoint = enemySpawnPoints[i];
 
-            SpawnSingleEnemy(spawnPoint.position);
+            // Passa o índice 'i' para o método de spawn
+            SpawnSingleEnemy(spawnPoint.position, i);
         }
-        Debug.Log($"Master Client spawnou {enemiesToSpawn} inimigos nos seus pontos designados.");
+        Debug.Log($"Master Client spawnou {enemiesToSpawn} inimigos. Cada um tem {maxRespawnsPerEnemy} respawns.");
     }
 
-    private void SpawnSingleEnemy(Vector3 position)
+    /// <summary>
+    /// Instancia um inimigo e passa o seu spawnIndex (índice) através do InstantiationData.
+    /// </summary>
+    private void SpawnSingleEnemy(Vector3 position, int spawnIndex)
     {
         if (!PhotonNetwork.IsMasterClient) return;
 
         if (enemyPrefab != null)
         {
-            GameObject newEnemy = PhotonNetwork.Instantiate(enemyPrefab.name, position, Quaternion.identity);
+            // Prepara os dados de instanciação (o índice do spawn point)
+            object[] data = new object[] { spawnIndex };
+
+            // Instancia o inimigo e passa os 'data'
+            GameObject newEnemy = PhotonNetwork.Instantiate(enemyPrefab.name, position, Quaternion.identity, 0, data);
 
             activeEnemies.Add(newEnemy);
         }
@@ -157,52 +172,53 @@ public class TGRoomManager : MonoBehaviourPunCallbacks
         }
     }
 
-    public void RequestEnemyRespawn(Vector3 deathPosition)
+    /// <summary>
+    /// Chamado pelo EnemyHealth quando morre, passando o seu spawnIndex.
+    /// </summary>
+    public void RequestEnemyRespawn(int spawnIndex)
     {
         if (!PhotonNetwork.IsMasterClient) return;
 
-        Debug.Log($"Inimigo foi destruído. Respawn agendado em {enemyRespawnDelay} segundos.");
+        // Verifica se o índice é válido
+        if (spawnIndex < 0 || spawnIndex >= enemyRespawnCounts.Length)
+        {
+            Debug.LogError($"[TGRoomManager] Recebido pedido de respawn para índice inválido: {spawnIndex}");
+            return;
+        }
 
-        // Encontra o ponto de spawn original mais próximo da posição de morte
-        Vector3 respawnPosition = FindClosestSpawnPoint(deathPosition);
+        // Verifica se este spawn point ainda tem respawns
+        if (enemyRespawnCounts[spawnIndex] > 0)
+        {
+            // Se sim, decrementa a contagem
+            enemyRespawnCounts[spawnIndex]--;
 
-        StartCoroutine(EnemyRespawnRoutine(enemyRespawnDelay, respawnPosition));
+            Debug.Log($"[TGRoomManager] Inimigo do Spawn Point {spawnIndex} morreu. {enemyRespawnCounts[spawnIndex]} respawns restantes. Agendando respawn.");
+
+            // Pega na posição original do spawn point usando o índice
+            Vector3 respawnPosition = enemySpawnPoints[spawnIndex].position;
+
+            // Passa o índice para a rotina
+            StartCoroutine(EnemyRespawnRoutine(enemyRespawnDelay, respawnPosition, spawnIndex));
+        }
+        else
+        {
+            // Se for 0, não faz respawn
+            Debug.Log($"[TGRoomManager] Inimigo do Spawn Point {spawnIndex} morreu. Não há mais respawns.");
+        }
     }
 
-    private IEnumerator EnemyRespawnRoutine(float delay, Vector3 position)
+    /// <summary>
+    /// Aguarda o delay e chama o SpawnSingleEnemy com o índice original.
+    /// </summary>
+    private IEnumerator EnemyRespawnRoutine(float delay, Vector3 position, int spawnIndex)
     {
         yield return new WaitForSeconds(delay);
 
         if (PhotonNetwork.IsMasterClient)
         {
-            SpawnSingleEnemy(position);
-            Debug.Log("Inimigo respawnado.");
+            // Faz o respawn do novo inimigo, passando o mesmo índice do spawn point
+            SpawnSingleEnemy(position, spawnIndex);
+            Debug.Log($"[TGRoomManager] Inimigo respawnado no Spawn Point {spawnIndex}.");
         }
-    }
-
-    /// <summary>
-    /// Encontra o ponto de spawn original que está mais próximo da posição de morte do inimigo.
-    /// </summary>
-    private Vector3 FindClosestSpawnPoint(Vector3 deathPosition)
-    {
-        if (enemySpawnPoints == null || enemySpawnPoints.Length == 0)
-        {
-            Debug.LogError("Nenhum ponto de spawn de inimigo atribuído!");
-            return deathPosition;
-        }
-
-        Transform closestPoint = enemySpawnPoints[0];
-        float minDistance = Vector3.Distance(deathPosition, closestPoint.position);
-
-        for (int i = 1; i < enemySpawnPoints.Length; i++)
-        {
-            float distance = Vector3.Distance(deathPosition, enemySpawnPoints[i].position);
-            if (distance < minDistance)
-            {
-                minDistance = distance;
-                closestPoint = enemySpawnPoints[i];
-            }
-        }
-        return closestPoint.position;
     }
 }

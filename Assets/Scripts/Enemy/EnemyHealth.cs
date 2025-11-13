@@ -1,10 +1,11 @@
 using UnityEngine;
 using Photon.Pun;
 using System.Collections;
-using TMPro; // Certifica-te que tens o TextMeshPro importado se o usares
+using TMPro; // Necessário se estiveres a usar TextMeshPro
 
+// Adiciona a interface IPunInstantiateMagicCallback
 [RequireComponent(typeof(PhotonView), typeof(EnemyAI))]
-public class EnemyHealth : MonoBehaviourPunCallbacks
+public class EnemyHealth : MonoBehaviourPunCallbacks, IPunInstantiateMagicCallback
 {
     [Header("Vida")]
     public int maxHealth = 50;
@@ -19,11 +20,32 @@ public class EnemyHealth : MonoBehaviourPunCallbacks
     private PhotonView photonView;
     private EnemyAI enemyAI;
 
+    // Variável para guardar o índice do seu spawn point
+    private int mySpawnIndex = -1;
+
     void Awake()
     {
         photonView = GetComponent<PhotonView>();
         enemyAI = GetComponent<EnemyAI>(); // Obtém a referência ao script de IA
         currentHealth = maxHealth;
+    }
+
+    /// <summary>
+    /// Chamado pela Photon quando este objeto é instanciado pela rede.
+    /// Usamos isto para receber o spawnIndex enviado pelo TGRoomManager.
+    /// </summary>
+    public void OnPhotonInstantiate(PhotonMessageInfo info)
+    {
+        // info.photonView.InstantiationData contém os dados enviados pelo Instantiate
+        if (info.photonView.InstantiationData != null && info.photonView.InstantiationData.Length > 0)
+        {
+            this.mySpawnIndex = (int)info.photonView.InstantiationData[0];
+            Debug.Log($"[EnemyHealth] Inimigo instanciado. O meu Spawn Point é o {mySpawnIndex}");
+        }
+        else
+        {
+            Debug.LogWarning($"[EnemyHealth] Inimigo instanciado sem um Spawn Index! O respawn limitado pode não funcionar.");
+        }
     }
 
     void Start()
@@ -48,11 +70,10 @@ public class EnemyHealth : MonoBehaviourPunCallbacks
         currentHealth -= _damage;
         UpdateHealthBar();
 
-        // DEBUG PARA MOSTRAR A VIDA
-        Debug.Log($"[EnemyHealth] {gameObject.name} (Inimigo) recebeu {_damage} de dano. Vida restante: {currentHealth}/{maxHealth}");
+        // Debug de Vida
+        Debug.Log($"[EnemyHealth] {gameObject.name} (Inimigo) recebeu {_damage} de dano. Vida restante: {currentHealth}/{maxHealth} (SpawnIndex: {mySpawnIndex})");
 
         // --- LÓGICA DE KNOCKBACK E STUN ---
-        // Se ainda estiver vivo e se o Master Client estiver a executar (para controle de física)
         if (currentHealth > 0 && PhotonNetwork.IsMasterClient && enemyAI != null)
         {
             PhotonView attackerView = PhotonView.Find(attackerViewID);
@@ -132,7 +153,8 @@ public class EnemyHealth : MonoBehaviourPunCallbacks
             // 1. ANTES de destruir, pede ao Room Manager para agendar um respawn.
             if (TGRoomManager.instance != null)
             {
-                TGRoomManager.instance.RequestEnemyRespawn(transform.position);
+                // ENVIA O ÍNDICE (mySpawnIndex), não a posição
+                TGRoomManager.instance.RequestEnemyRespawn(mySpawnIndex);
             }
 
             // 2. Destrói o objeto de rede
