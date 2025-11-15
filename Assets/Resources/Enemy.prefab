@@ -17,7 +17,7 @@ GameObject:
   - component: {fileID: 6417134593850201348}
   - component: {fileID: 4117143648344844632}
   - component: {fileID: 8458092702829116202}
-  m_Layer: 7
+  m_Layer: 6
   m_Name: Enemy
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -277,7 +277,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 997426437899963308}
-  m_Layer: 7
+  m_Layer: 6
   m_Name: AttackPoint
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -308,7 +308,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1221493521691430934}
-  m_Layer: 7
+  m_Layer: 6
   m_Name: GroundCheck
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -341,7 +341,7 @@ GameObject:
   - component: {fileID: 3662391120548152021}
   - component: {fileID: 4307109113467976242}
   - component: {fileID: 327464410193743499}
-  m_Layer: 7
+  m_Layer: 6
   m_Name: Text (TMP)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -516,7 +516,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1915869961718531698}
   - component: {fileID: 5098924766132762239}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: NameTagParente
   m_TagString: Untagged
   m_Icon: {fileID: 0}
