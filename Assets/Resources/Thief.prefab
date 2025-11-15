@@ -332,8 +332,8 @@ MonoBehaviour:
   health: 100
   isLocalPlayer: 0
   healthBar: {fileID: 3206697270659085744}
-  knockbackForce: 10
-  knockbackDuration: 0.2
+  knockbackForceFallback: 10
+  knockbackDurationFallback: 0.3
   healthText: {fileID: 0}
 --- !u!95 &-5072115687719234448
 Animator:
@@ -997,7 +997,7 @@ Transform:
   m_GameObject: {fileID: 6266469831547744066}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0.113, y: 0, z: 0}
+  m_LocalPosition: {x: 0.017, y: 0, z: 0}
   m_LocalScale: {x: 2.09, y: 2.09, z: 2.09}
   m_ConstrainProportionsScale: 0
   m_Children: []
