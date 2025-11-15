@@ -14,6 +14,9 @@ public class RoomManager : MonoBehaviourPunCallbacks
     // Chave da Propriedade Personalizada para rastrear respawns restantes
     private const string RESPAWN_COUNT_KEY = "RespawnCount";
 
+    // Variável para guardar o nome da cena a carregar após sair da sala
+    private string sceneToLoadOnLeave = "";
+
     public GameObject player;
 
     [Space]
@@ -110,6 +113,35 @@ public class RoomManager : MonoBehaviourPunCallbacks
         PhotonNetwork.JoinOrCreateRoom(roomName: PlayerPrefs.GetString(key: "RoomNameToJoin"), ro, typedLobby: null);
     }
 
+    // --- FUNÇÃO PARA SAIR E IR PARA O MENU (LIGADA AO TEU BOTÃO) ---
+
+    /// <summary>
+    /// Função pública chamada pelo botão de pausa para sair da sala e ir para o menu.
+    /// </summary>
+    public void LeaveGameAndGoToMenu(string menuSceneName)
+    {
+        Debug.Log("A sair do jogo e a voltar ao menu...");
+
+        // 1. Volta a pôr o tempo a 1, caso estivesse em pausa
+        Time.timeScale = 1f;
+
+        // 2. Guarda o nome da cena do menu para carregar mais tarde
+        sceneToLoadOnLeave = menuSceneName;
+
+        // 3. Manda o Photon sair da sala (isto é assíncrono)
+        if (PhotonNetwork.InRoom)
+        {
+            PhotonNetwork.LeaveRoom();
+        }
+        else
+        {
+            // Fallback para caso não esteja numa sala, mas o jogo tenha começado
+            SceneManager.LoadScene(menuSceneName);
+            Destroy(this.gameObject);
+        }
+    }
+
+
     // --- CALLBACKS DO PHOTON ---
 
     public override void OnConnectedToMaster()
@@ -128,7 +160,6 @@ public class RoomManager : MonoBehaviourPunCallbacks
         nameUI.SetActive(true);
     }
 
-    // **FUNÇÃO CHAVE:** Não dá spawn diretamente; apenas passa o controle ao LobbyManager.
     public override void OnJoinedRoom()
     {
         base.OnJoinedRoom();
@@ -142,10 +173,30 @@ public class RoomManager : MonoBehaviourPunCallbacks
         {
             LobbyManager.instance.OnRoomEntered();
         }
-
-        // 2. O Spawn do jogador foi REMOVIDO daqui. Ele é chamado APENAS pelo LobbyManager.GameStartLogic().
-        // RespawnPlayer(); // (Corretamente comentado/removido)
     }
+
+    // **NOVO CALLBACK CHAVE:** Chamado após o jogador sair da sala (LeaveRoom())
+    public override void OnLeftRoom()
+    {
+        base.OnLeftRoom();
+        Debug.Log("Saída da sala com sucesso (OnLeftRoom).");
+
+        // Agora que saímos da sala, verifica se tínhamos uma cena para carregar
+        if (!string.IsNullOrEmpty(sceneToLoadOnLeave))
+        {
+            // Carrega a cena do menu
+            SceneManager.LoadScene(sceneToLoadOnLeave);
+
+            // Destrói o RoomManager para que não vá para a cena do menu
+            if (instance == this)
+            {
+                Destroy(this.gameObject);
+            }
+            // Limpa a variável
+            sceneToLoadOnLeave = "";
+        }
+    }
+
 
     // --- LÓGICA DE RESPAWN E MORTE ---
 
@@ -165,16 +216,8 @@ public class RoomManager : MonoBehaviourPunCallbacks
     public void RespawnPlayer()
     {
         // Obtém a contagem de respawns restantes.
-        // O valor MAX_RESPAWNS (2) é retornado se esta for a primeira vez.
         int respawnsLeft = GetRespawnCount(PhotonNetwork.LocalPlayer);
 
-        // O jogador pode dar spawn se a contagem for MAX_RESPAWNS (primeiro spawn)
-        // OU se o valor sincronizado for maior ou igual a 0 (respawns seguintes).
-        // Se respawnsLeft for MAX_RESPAWNS (2), este é o primeiro spawn.
-        // Se respawnsLeft for 1 ou 0, são os respawns seguintes.
-
-        // CORREÇÃO: Usar respawnsLeft >= 0 para incluir o spawn inicial e todos os respawns seguintes
-        // até esgotar a contagem. MAX_RESPAWNS (2) + 1 vida é a contagem total.
         if (respawnsLeft >= 0)
         {
             Transform spawnPoint = spawnPoints[UnityEngine.Random.Range(0, spawnPoints.Length)];
@@ -183,7 +226,8 @@ public class RoomManager : MonoBehaviourPunCallbacks
 
             // Configurações do jogador local
             _player.GetComponent<PlayerSetup>().IsLocalPlayer();
-            _player.GetComponent<Health>().isLocalPlayer = true;
+            // Nota: Se 'Health' existe e é necessário, mantém as linhas abaixo
+            // _player.GetComponent<Health>().isLocalPlayer = true; 
 
             // Define e sincroniza o Nickname
             _player.GetComponent<PhotonView>().RPC("SetNickname", RpcTarget.AllBuffered, nickName);
@@ -235,6 +279,4 @@ public class RoomManager : MonoBehaviourPunCallbacks
         base.OnPlayerLeftRoom(otherPlayer);
         Debug.LogFormat("OnPlayerLeftRoom() {0}", otherPlayer.NickName);
     }
-
-    // Os callbacks OnEnable, OnDisable, e OnSceneLoaded foram removidos
 }
