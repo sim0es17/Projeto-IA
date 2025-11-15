@@ -2,6 +2,8 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using Photon.Pun;
+using UnityEngine.SceneManagement; // Adicionado
+using Photon.Realtime; // Adicionado
 
 public class TGRoomManager : MonoBehaviourPunCallbacks
 {
@@ -23,6 +25,7 @@ public class TGRoomManager : MonoBehaviourPunCallbacks
     [Space]
     public GameObject tgRoomCam;
 
+    // Lista para rastrear os inimigos ativos
     private List<GameObject> activeEnemies = new List<GameObject>();
 
     // Array para guardar a contagem de cada spawn point
@@ -36,6 +39,7 @@ public class TGRoomManager : MonoBehaviourPunCallbacks
             return;
         }
         instance = this;
+        // Não usamos DontDestroyOnLoad aqui, pois o objeto é destruído ao sair da sala
     }
 
     void Start()
@@ -43,6 +47,8 @@ public class TGRoomManager : MonoBehaviourPunCallbacks
         Debug.Log("Connecting...");
         PhotonNetwork.ConnectUsingSettings();
     }
+
+    // --- FUNÇÕES DE CONEXÃO E SALA ---
 
     public override void OnConnectedToMaster()
     {
@@ -64,6 +70,7 @@ public class TGRoomManager : MonoBehaviourPunCallbacks
             IsOpen = true      // Aberta para tu entrares
         };
 
+        // Entra ou cria a sala de treino
         PhotonNetwork.JoinOrCreateRoom("TrainingGroundRoom", roomOptions, null);
     }
 
@@ -90,6 +97,66 @@ public class TGRoomManager : MonoBehaviourPunCallbacks
         {
             SpawnInitialEnemies();
         }
+    }
+
+    public override void OnDisconnected(DisconnectCause cause)
+    {
+        base.OnDisconnected(cause);
+        Debug.LogWarning($"[TGRoomManager] Desconectado. Causa: {cause}");
+        // Pode adicionar lógica para mostrar uma UI de erro se necessário
+    }
+
+    // --- FUNÇÃO PARA SAIR E IR PARA O MENU (LIGADA AO TEU BOTÃO) ---
+
+    /// <summary>
+    /// Desconecta-se do Photon e carrega a cena do menu.
+    /// Chamado pelo botão de sair do jogo.
+    /// </summary>
+    public void LeaveGameAndGoToMenu(string menuSceneName)
+    {
+        // 1. Destrói todos os inimigos ativos antes de sair
+        DestroyAllActiveEnemies();
+
+        // 2. Continua com a lógica de saída
+        Debug.Log("[TGRoomManager] A sair do modo de treino e a voltar ao menu...");
+        Time.timeScale = 1f;
+
+        // 3. Desconecta totalmente do Photon
+        if (PhotonNetwork.IsConnected)
+        {
+            PhotonNetwork.Disconnect();
+        }
+
+        // 4. Carrega a cena do menu
+        SceneManager.LoadScene(menuSceneName);
+
+        // 5. Destrói esta instância
+        if (instance == this)
+        {
+            Destroy(this.gameObject);
+        }
+    }
+
+    /// <summary>
+    /// Destrói todos os inimigos instanciados no Photon que estão ativos na lista.
+    /// Chamado ao sair do jogo.
+    /// </summary>
+    private void DestroyAllActiveEnemies()
+    {
+        if (!PhotonNetwork.IsMasterClient) return;
+
+        Debug.Log("[TGRoomManager] A destruir todos os inimigos ativos...");
+
+        // Usamos uma cópia temporária para evitar modificar a lista enquanto iteramos
+        foreach (GameObject enemy in new List<GameObject>(activeEnemies))
+        {
+            if (enemy != null)
+            {
+                // A destruição de um objeto Photon deve ser feita usando PhotonNetwork.Destroy
+                PhotonNetwork.Destroy(enemy);
+            }
+        }
+        activeEnemies.Clear();
     }
 
     // --- Player Spawn ---
