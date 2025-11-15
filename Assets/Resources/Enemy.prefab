@@ -234,6 +234,7 @@ MonoBehaviour:
   attackRange: 1.5
   moveSpeed: 3
   patrolSpeed: 1.5
+  patrolDistance: 5
   edgeCheckDistance: 5
   wallCheckDistancePatrol: 0.5
   groundCheckPoint: {fileID: 1221493521691430934}
