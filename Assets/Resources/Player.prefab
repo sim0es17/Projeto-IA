@@ -331,8 +331,8 @@ MonoBehaviour:
   health: 100
   isLocalPlayer: 0
   healthBar: {fileID: 3206697270659085744}
-  knockbackForce: 10
-  knockbackDuration: 0.2
+  knockbackForceFallback: 10
+  knockbackDurationFallback: 0.3
   healthText: {fileID: 0}
 --- !u!1 &2230336388305368168
 GameObject:

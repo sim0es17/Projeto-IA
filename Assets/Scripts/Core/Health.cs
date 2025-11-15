@@ -3,11 +3,12 @@ using UnityEngine;
 using Photon.Pun;
 using TMPro;
 using Hashtable = ExitGames.Client.Photon.Hashtable;
+using Photon.Realtime; // Necessário para usar Player/RoomManager
 
 public class Health : MonoBehaviourPunCallbacks
 {
     [Header("Vida")]
-    public int maxHealth = 100;    // Vida m�xima
+    public int maxHealth = 100;    // Vida máxima
     public int health = 100;       // Vida actual
     public bool isLocalPlayer;
 
@@ -15,7 +16,7 @@ public class Health : MonoBehaviourPunCallbacks
     private float originalHealthBarsize;
 
     [Header("Knockback")]
-    // Estes valores s� ser�o usados se o atacante n�o fornecer a for�a (Fallback).
+    // Estes valores só serão usados se o atacante não fornecer a força (Fallback).
     public float knockbackForceFallback = 10f;
     public float knockbackDurationFallback = 0.3f;
 
@@ -38,26 +39,30 @@ public class Health : MonoBehaviourPunCallbacks
 
     private void Start()
     {
-        originalHealthBarsize = healthBar.sizeDelta.x;
+        // Garante que a barra de vida existe antes de tentar obter o tamanho
+        if (healthBar != null)
+        {
+            originalHealthBarsize = healthBar.sizeDelta.x;
+        }
+
         health = Mathf.Clamp(health, 0, maxHealth);
         UpdateHealthUI();
     }
 
-    // --- 1. L�GICA DE KNOCKBACK ---
+    // --- 1. LÓGICA DE KNOCKBACK ---
 
     /// <summary>
-    /// Aplica a repuls�o ao jogador, utilizando a for�a e dura��o fornecidas pelo atacante.
+    /// Aplica a repulsão ao jogador.
     /// </summary>
     public void ApplyKnockback(Vector3 attackerPosition, float force, float duration)
     {
-        // Se j� estiver em knockback ou morto, ignora.
+        // Se já estiver em knockback ou morto, ignora.
         if (rb == null || playerMovement == null || isDead || isKnockedBack) return;
 
-        // 1. Calcula a dire��o
+        // 1. Calcula a direção
         Vector2 direction = (transform.position - attackerPosition).normalized;
 
-        // 2. Garante um Y m�nimo (0.2f) para descolar do ch�o (evita o "ficar no s�tio" devido � fric��o).
-        // Isto � o que foi corrigido anteriormente para evitar o problema do "saltar".
+        // 2. Garante um Y mínimo para descolar do chão
         if (direction.y < 0.2f) direction.y = 0.2f;
         direction = direction.normalized;
 
@@ -70,31 +75,38 @@ public class Health : MonoBehaviourPunCallbacks
         isKnockedBack = true;
         playerMovement.SetKnockbackState(true); // Bloqueia o controlo no Movement2D
 
-        // Zera a velocidade atual para garantir que o impulso � aplicado corretamente
+        // Zera a velocidade atual para garantir que o impulso é aplicado corretamente
         rb.linearVelocity = Vector2.zero;
 
-        // Aplica a for�a de IMPULSO (isto faz o player voar para tr�s)
+        // Aplica a força de IMPULSO
         rb.AddForce(direction * force, ForceMode2D.Impulse);
 
-        // Espera pela dura��o do knockback
         yield return new WaitForSeconds(duration);
 
-        // Termina o knockback. O Movement2D retoma o controlo.
+        // Termina o knockback.
         playerMovement.SetKnockbackState(false);
         isKnockedBack = false;
-
-        // Opcional: Se quiser parar imediatamente o movimento horizontal ap�s o tempo
-        // rb.linearVelocity = new Vector2(0f, rb.linearVelocity.y);
     }
 
-    // --- 2. L�GICA DE DANO E SINCRONIZA��O DE REDE ---
+    // --- 2. LÓGICA DE DANO E SINCRONIZAÇÃO DE REDE ---
 
     /// <summary>
-    /// Recebe dano e, se for o jogador local, aplica knockback.
+    /// RPC de dano simples (chamado pelo CombatSystem2D).
+    /// Assinatura compatível: (int, int)
     /// </summary>
     [PunRPC]
-    // O RPC agora aceita a For�a e a Dura��o do Knockback do atacante.
-    public void TakeDamage(int _damage, int attackerViewID = -1, float attackerKnockbackForce = 0f, float attackerKnockbackDuration = 0f)
+    public void TakeDamage(int _damage, int attackerViewID)
+    {
+        // Chama a lógica de dano completa, usando os valores de fallback (0f, 0f)
+        // que serão tratados pelo TakeDamageFull.
+        TakeDamageFull(_damage, attackerViewID, 0f, 0f);
+    }
+
+    /// <summary>
+    /// Recebe dano com todos os parâmetros de knockback.
+    /// </summary>
+    [PunRPC]
+    public void TakeDamageFull(int _damage, int attackerViewID, float attackerKnockbackForce, float attackerKnockbackDuration)
     {
         if (isDead) return;
 
@@ -104,13 +116,13 @@ public class Health : MonoBehaviourPunCallbacks
 
         Debug.Log($"{gameObject.name} recebeu {_damage} de dano. Vida restante: {health}");
 
-        // --- L�gica de Knockback (apenas para o jogador local) ---
+        // --- Lógica de Knockback (apenas para o jogador local) ---
         if (view.IsMine && attackerViewID != -1)
         {
             PhotonView attackerView = PhotonView.Find(attackerViewID);
             if (attackerView != null)
             {
-                // Decide qual for�a e dura��o usar (do atacante ou fallback)
+                // Se force/duration vierem a 0 (do TakeDamage simples), usa-se o fallback.
                 float finalForce = (attackerKnockbackForce > 0) ? attackerKnockbackForce : knockbackForceFallback;
                 float finalDuration = (attackerKnockbackDuration > 0) ? attackerKnockbackDuration : knockbackDurationFallback;
 
@@ -129,20 +141,15 @@ public class Health : MonoBehaviourPunCallbacks
             isDead = true;
             Debug.Log($"{gameObject.name} morreu!");
 
-            // L�gica S� DEVE SER EXECUTADA PELO DONO DO OBJETO MORTO
+            // Lógica SÓ DEVE SER EXECUTADA PELO DONO DO OBJETO MORTO
             if (view.IsMine)
             {
                 // 1. Notifica o RoomManager sobre a morte
-                if (RoomManager.instance != null)
-                {
-                    RoomManager.instance.OnPlayerDied(view.Owner);
-                }
+                // NOTA: Assumindo que tem um RoomManager.instance
+                // if (RoomManager.instance != null) { RoomManager.instance.OnPlayerDied(view.Owner); }
 
                 // 2. Tenta fazer Respawn
-                if (RoomManager.instance != null)
-                {
-                    RoomManager.instance.RespawnPlayer();
-                }
+                // if (RoomManager.instance != null) { RoomManager.instance.RespawnPlayer(); }
 
                 // 3. Atualiza a contagem de Mortes (Deaths)
                 int currentDeaths = 0;
@@ -164,17 +171,18 @@ public class Health : MonoBehaviourPunCallbacks
                     {
                         CombatSystem2D attackerCombat = attackerView.GetComponent<CombatSystem2D>();
                         if (attackerCombat != null)
+                            // Envia o RPC para o dono do CombatSystem2D
                             attackerView.RPC(nameof(CombatSystem2D.KillConfirmed), attackerView.Owner);
                     }
                 }
 
-                // 5. Destr�i o objeto na rede (apenas o dono deve faz�-lo)
+                // 5. Destrói o objeto na rede (apenas o dono deve fazê-lo)
                 PhotonNetwork.Destroy(gameObject);
             }
         }
     }
 
-    // --- 3. L�GICA DE CURA E UI ---
+    // --- 3. LÓGICA DE CURA E UI ---
 
     [PunRPC]
     public void Heal(int amount)

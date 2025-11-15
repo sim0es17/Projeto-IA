@@ -238,8 +238,6 @@ MonoBehaviour:
   enemyLayers:
     serializedVersion: 2
     m_Bits: 64
-  hitScore: 10
-  killScore: 50
   defenseCooldown: 0.2
   isDefending: 0
   hitVFX: {fileID: 9081207694187098227, guid: a14c85ec1b7dde140924e194f58c2f0b, type: 3}
