@@ -335,7 +335,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0a634b57d2adc694aac49d1fff2f3b53, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  canvasParent: {fileID: 1967493755}
   mainButtonsPanel: {fileID: 163577173}
   playOptionsPanel: {fileID: 1809367855}
   multiplayerSceneName: MultiplayerLobby
@@ -2486,5 +2485,5 @@ SceneRoots:
   - {fileID: 931434523}
   - {fileID: 456206795}
   - {fileID: 464975493}
-  - {fileID: 241271182}
   - {fileID: 984713068}
+  - {fileID: 241271182}

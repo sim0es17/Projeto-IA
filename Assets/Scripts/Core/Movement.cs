@@ -161,6 +161,8 @@ public class Movement2D : MonoBehaviour
         {
             anim.SetFloat("Speed", isDefending ? 0f : Mathf.Abs(move));
             anim.SetBool("Grounded", grounded);
+            bool isSprintAnim = !isDefending && sprinting && Mathf.Abs(move) > 0.05f;
+            anim.SetBool("IsSprinting", isSprintAnim);
         }
     }
 

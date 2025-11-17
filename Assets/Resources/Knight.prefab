@@ -23,7 +23,7 @@ GameObject:
   - component: {fileID: 24435223047702602}
   - component: {fileID: 3428132853830145352}
   m_Layer: 7
-  m_Name: Chef
+  m_Name: Knight
   m_TagString: Player
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -38,8 +38,8 @@ Transform:
   m_GameObject: {fileID: 61911978259195691}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -6.434483, y: -1.2993245, z: 0}
-  m_LocalScale: {x: 10, y: 10, z: 1}
+  m_LocalPosition: {x: -6.0265, y: -1.8976, z: 0}
+  m_LocalScale: {x: 7.086, y: 6.932, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 1170441061605003294}
@@ -92,7 +92,7 @@ SpriteRenderer:
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 0
-  m_Sprite: {fileID: 403677796, guid: 46ed2b139aeab8a489794950ef9cf0e4, type: 3}
+  m_Sprite: {fileID: 815424164945274260, guid: 66845d0ff5fb55a40938c88ca166c38f, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0
@@ -164,8 +164,8 @@ CapsuleCollider2D:
   m_UsedByEffector: 0
   m_CompositeOperation: 0
   m_CompositeOrder: 0
-  m_Offset: {x: 0.0006906748, y: -0.0038686753}
-  m_Size: {x: 0.17354408, y: 0.31656575}
+  m_Offset: {x: 0.00651627, y: 0.0021500492}
+  m_Size: {x: 0.30477184, y: 0.3815463}
   m_Direction: 0
 --- !u!114 &788247720233381919
 MonoBehaviour:
@@ -179,7 +179,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 62899f850307741f2a39c98a8b639597, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  m_Actions: {fileID: -944628639613478452, guid: 2bcd2660ca9b64942af0de543d8d7100, type: 3}
+  m_Actions: {fileID: 0}
   m_NotificationBehavior: 0
   m_UIInputModule: {fileID: 0}
   m_DeviceLostEvent:
@@ -237,7 +237,7 @@ MonoBehaviour:
   attackPoint: {fileID: 8491974259468159439}
   enemyLayers:
     serializedVersion: 2
-    m_Bits: 128
+    m_Bits: 64
   defenseCooldown: 0.2
   isDefending: 0
   hitVFX: {fileID: 9081207694187098227, guid: a14c85ec1b7dde140924e194f58c2f0b, type: 3}
@@ -346,7 +346,7 @@ Animator:
   m_GameObject: {fileID: 61911978259195691}
   m_Enabled: 1
   m_Avatar: {fileID: 0}
-  m_Controller: {fileID: 9100000, guid: bb714b39f98e4db4c8cfa7dc7694a6c2, type: 2}
+  m_Controller: {fileID: 9100000, guid: ca0a075bcec57c549972a80a1427bc89, type: 2}
   m_CullingMode: 0
   m_UpdateMode: 0
   m_ApplyRootMotion: 0
@@ -387,7 +387,7 @@ GameObject:
   - component: {fileID: 6165639168088884306}
   - component: {fileID: 7935735678930373152}
   - component: {fileID: 3299946973090286454}
-  m_Layer: 5
+  m_Layer: 7
   m_Name: CountdownText
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -526,8 +526,8 @@ GameObject:
   - component: {fileID: 4680205657692814750}
   - component: {fileID: 3149089365557184293}
   - component: {fileID: 2411068745142178634}
-  - component: {fileID: 8248645493380861134}
-  m_Layer: 0
+  - component: {fileID: 8087985657373833023}
+  m_Layer: 7
   m_Name: Camera
   m_TagString: MainCamera
   m_Icon: {fileID: 0}
@@ -694,7 +694,7 @@ MonoBehaviour:
   zoomInDuration: 0.5
   leftTriggerX: -17
   rightTriggerX: 17
---- !u!114 &8248645493380861134
+--- !u!114 &8087985657373833023
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -735,7 +735,7 @@ Transform:
   m_GameObject: {fileID: 2480449986994863222}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -0, y: -0.11, z: 0}
+  m_LocalPosition: {x: 0.0201, y: -0.069, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -775,7 +775,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 180, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: -0.007, y: -0.65}
+  m_AnchoredPosition: {x: 0, y: -0.555}
   m_SizeDelta: {x: 20, y: 5}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!23 &3536821617852224011
@@ -928,7 +928,7 @@ GameObject:
   - component: {fileID: 3206697270659085744}
   - component: {fileID: 9088636836831211498}
   - component: {fileID: 622895528234739839}
-  m_Layer: 5
+  m_Layer: 7
   m_Name: Health
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1003,7 +1003,7 @@ GameObject:
   - component: {fileID: 8708055025907033569}
   - component: {fileID: 732986857557084534}
   - component: {fileID: 7250580242343582799}
-  m_Layer: 5
+  m_Layer: 7
   m_Name: HealthBG
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1080,7 +1080,7 @@ GameObject:
   - component: {fileID: 8178697680685288905}
   - component: {fileID: 7264599633082073286}
   - component: {fileID: 49088112294760505}
-  m_Layer: 5
+  m_Layer: 7
   m_Name: Canvas
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1183,7 +1183,7 @@ GameObject:
   - component: {fileID: 6050456394502486480}
   - component: {fileID: 3283410258006130191}
   - component: {fileID: 3430700335996069597}
-  m_Layer: 5
+  m_Layer: 7
   m_Name: DefenseIcon
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1259,7 +1259,7 @@ GameObject:
   - component: {fileID: 6508839326860794909}
   - component: {fileID: 7637169194961044974}
   - component: {fileID: 2399450394476314347}
-  m_Layer: 5
+  m_Layer: 7
   m_Name: DefenseCooldownText
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1409,7 +1409,7 @@ Transform:
   m_GameObject: {fileID: 6266469831547744066}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0.01, y: 0, z: 0}
+  m_LocalPosition: {x: 0.017, y: 0, z: 0}
   m_LocalScale: {x: 2.09, y: 2.09, z: 2.09}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -1425,7 +1425,7 @@ GameObject:
   m_Component:
   - component: {fileID: 500981701977581711}
   - component: {fileID: 7434430773278954710}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: NameTagParente
   m_TagString: Untagged
   m_Icon: {fileID: 0}
