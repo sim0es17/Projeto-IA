@@ -759,7 +759,33 @@ TextureImporter:
     secondaryTextures: []
     spriteCustomMetadata:
       entries: []
-    nameFileIdTable: {}
+    nameFileIdTable:
+      Cave - Floor_0: -4954059119055830327
+      Cave - Floor_1: 305323394930079794
+      Cave - Floor_10: 2253390746199645448
+      Cave - Floor_11: 8290354444149308812
+      Cave - Floor_12: 5243525934409782094
+      Cave - Floor_13: 4208575700174809024
+      Cave - Floor_14: 6481747363905849689
+      Cave - Floor_15: -3168780747585794531
+      Cave - Floor_16: -2774719256891474645
+      Cave - Floor_17: 8725424019370956628
+      Cave - Floor_18: -7484202232688903726
+      Cave - Floor_19: 5043568289773601922
+      Cave - Floor_2: 1794018694089678626
+      Cave - Floor_20: -861606704630974907
+      Cave - Floor_21: 8819954364823568428
+      Cave - Floor_22: -5612745519100525313
+      Cave - Floor_23: 1970606933979382678
+      Cave - Floor_24: 2889508841440921494
+      Cave - Floor_25: -6075913838774904605
+      Cave - Floor_3: 1179303002122093151
+      Cave - Floor_4: 4700242041578537017
+      Cave - Floor_5: -4080822399073288140
+      Cave - Floor_6: -7687895644184475551
+      Cave - Floor_7: 8486903552968967867
+      Cave - Floor_8: -6660941966638641390
+      Cave - Floor_9: -6585092860835429821
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 
