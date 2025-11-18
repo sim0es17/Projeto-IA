@@ -1,5 +1,9 @@
 fileFormatVersion: 2
+<<<<<<<< Updated upstream:Assets/Animations/Thief/Skeleton_Idle.anim.meta
 guid: d17df31aa1f424349ad23c53c4004162
+========
+guid: 782a6c9db0822a643ab7ebf1c4e4cade
+>>>>>>>> Stashed changes:Assets/Animations/Thief/Thief_Hit.anim.meta
 NativeFormatImporter:
   externalObjects: {}
   mainObjectFileID: 7400000
