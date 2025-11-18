@@ -1,5 +1,9 @@
 fileFormatVersion: 2
+<<<<<<<< Updated upstream:Assets/Animations/Skeleton.meta
 guid: 79adbce98555a8b48a3fbe201eb18565
+========
+guid: c0492fd1401293b47bf732667d99772c
+>>>>>>>> Stashed changes:Assets/Scripts/Flow.meta
 folderAsset: yes
 DefaultImporter:
   externalObjects: {}
