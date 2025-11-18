@@ -9,9 +9,9 @@ using TMPro;
 // Define a chave para as Custom Room Properties (Chaves usadas para sincronizar dados da sala)
 public static class CustomRoomProperties
 {
-    // Usar chaves curtas como "st" e "gs" ajuda a reduzir o tr·fego de rede
-    public const string StartTime = "st";       // Timestamp (double) de quando o timer comeÁou
-    public const string GameStarted = "gs";     // Sinaliza se o jogo comeÁou (bool)
+    // Usar chaves curtas como "st" e "gs" ajuda a reduzir o tr√°fego de rede
+    public const string StartTime = "st";       // Timestamp (double) de quando o timer come√ßou
+    public const string GameStarted = "gs";     // Sinaliza se o jogo come√ßou (bool)
 }
 
 public class LobbyManager : MonoBehaviourPunCallbacks
@@ -22,26 +22,26 @@ public class LobbyManager : MonoBehaviourPunCallbacks
     // --- NOVO FLAG PARA CONTROLE DE MOVIMENTO ---
     public static bool GameStartedAndPlayerCanMove = false;
 
-    // --- ConfiguraÁıes de Tempo ---
+    // --- Configura√ß√µes de Tempo ---
     private const int MAX_PLAYERS = 4;
     private const float WAIT_TIME_FOR_SECOND_PLAYER = 90f; // 90 segundos para 2+ jogadores
     private const float WAIT_TIME_FULL_ROOM = 5f;          // 5 segundos se a sala estiver cheia (4/4)
 
-    // --- Vari·veis de SincronizaÁ„o e Estado ---
+    // --- Vari√°veis de Sincroniza√ß√£o e Estado ---
     private bool isCountingDown = false;
-    private double startTime;             // O tempo real do Photon em que a contagem comeÁou
-    private float countdownDuration;      // DuraÁ„o total da contagem regressiva (90s ou 5s)
+    private double startTime;             // O tempo real do Photon em que a contagem come√ßou
+    private float countdownDuration;      // Dura√ß√£o total da contagem regressiva (90s ou 5s)
     private float remainingTime;          // Tempo restante no countdown
 
-    // --- ReferÍncias UI (Anexar no Inspector) ---
+    // --- Refer√™ncias UI (Anexar no Inspector) ---
     [Header("UI Elements")]
-    public GameObject lobbyPanel;         // O painel que contÈm toda a UI do lobby (ativar/desativar)
+    public GameObject lobbyPanel;         // O painel que cont√©m toda a UI do lobby (ativar/desativar)
     public TMPro.TextMeshProUGUI countdownText;      // Texto para mostrar o tempo restante
     public TMPro.TextMeshProUGUI playerListText;     // Texto para mostrar a lista de jogadores
 
     private void Awake()
     {
-        // Garante que haja apenas uma inst‚ncia do LobbyManager
+        // Garante que haja apenas uma inst√¢ncia do LobbyManager
         if (instance != null && instance != this)
         {
             Destroy(this.gameObject);
@@ -49,22 +49,22 @@ public class LobbyManager : MonoBehaviourPunCallbacks
         }
         instance = this;
 
-        // Garante que o movimento esteja desativado por padr„o ao carregar a cena
+        // Garante que o movimento esteja desativado por padr√£o ao carregar a cena
         GameStartedAndPlayerCanMove = false;
     }
 
     // --- ENTRADA NO LOBBY ---
 
-    // Chamada pelo RoomManager apÛs o jogador entrar na sala (OnJoinedRoom)
+    // Chamada pelo RoomManager ap√≥s o jogador entrar na sala (OnJoinedRoom)
     public void OnRoomEntered()
     {
-        // **VerificaÁ„o de seguranÁa para UI**
+        // **Verifica√ß√£o de seguran√ßa para UI**
         if (lobbyPanel == null) return;
 
         // Ativa a tela de espera/lobby
         lobbyPanel.SetActive(true);
 
-        // MasterClient verifica imediatamente as condiÁıes de inÌcio
+        // MasterClient verifica imediatamente as condi√ß√µes de in√≠cio
         if (PhotonNetwork.IsMasterClient)
         {
             CheckStartConditions();
@@ -72,15 +72,17 @@ public class LobbyManager : MonoBehaviourPunCallbacks
 
         // Garante que a UI seja inicializada
         UpdateLobbyUI();
+        // Garante que o timer UI comece no estado correto
+        UpdateCountdownUI(remainingTime);
     }
 
-    // --- UPDATE LOOP (LÛgica de Contagem) ---
+    // --- UPDATE LOOP (L√≥gica de Contagem) ---
     void Update()
     {
-        //   CORRE«√O DE ERRO: Garante que o painel de UI n„o foi destruÌdo (MissingReferenceException)
+        // CORRE√á√ÉO DE ERRO: Garante que o painel de UI n√£o foi destru√≠do
         if (lobbyPanel == null) return;
 
-        // SÛ executa a lÛgica de contagem se estiver na sala e o timer estiver ativo
+        // S√≥ executa a l√≥gica de contagem se estiver na sala e o timer estiver ativo
         if (!PhotonNetwork.InRoom || !isCountingDown)
         {
             // A UI ainda precisa ser atualizada fora do countdown para mostrar a lista de jogadores
@@ -88,16 +90,23 @@ public class LobbyManager : MonoBehaviourPunCallbacks
             return;
         }
 
-        // LÛgica de contagem regressiva (compartilhada por todos os clientes)
+        // L√≥gica de contagem regressiva (compartilhada por todos os clientes)
         // Usa o tempo sincronizado do Photon
         double elapsed = PhotonNetwork.Time - startTime;
+
+        // --- CORRE√á√ÉO APLICADA (Linha 101) ---
+        // Usamos System.Math.Max porque 'elapsed' √© double e Mathf √© para float
+        elapsed = System.Math.Max(0.0, elapsed); 
+        
         remainingTime = Mathf.Max(0f, countdownDuration - (float)elapsed);
+
+        Debug.Log($"Contagem regressiva: {remainingTime}s restantes.");
 
         // Atualiza a UI para todos os clientes
         UpdateCountdownUI(remainingTime);
 
         // APENAS o MasterClient decide o que fazer quando o tempo acaba
-        if (PhotonNetwork.IsMasterClient && remainingTime <= 0f)
+        if (PhotonNetwork.IsMasterClient && remainingTime <= 0.01f && startTime > 0) 
         {
             StartGame();
         }
@@ -108,6 +117,7 @@ public class LobbyManager : MonoBehaviourPunCallbacks
     public override void OnPlayerEnteredRoom(Player newPlayer)
     {
         base.OnPlayerEnteredRoom(newPlayer);
+        Debug.Log("Player entrou: " + newPlayer.NickName);
         if (PhotonNetwork.IsMasterClient)
         {
             CheckStartConditions();
@@ -129,7 +139,7 @@ public class LobbyManager : MonoBehaviourPunCallbacks
     {
         base.OnRoomPropertiesUpdate(propertiesThatChanged);
 
-        // 2. SincronizaÁ„o do GameStarted (gs)
+        // 2. Sincroniza√ß√£o do GameStarted (gs)
         if (propertiesThatChanged.ContainsKey(CustomRoomProperties.GameStarted))
         {
             if ((bool)propertiesThatChanged[CustomRoomProperties.GameStarted])
@@ -140,7 +150,7 @@ public class LobbyManager : MonoBehaviourPunCallbacks
             }
         }
 
-        // VerificaÁ„o para evitar que o timer recomece apÛs o jogo comeÁar
+        // Verifica√ß√£o para evitar que o timer recomece ap√≥s o jogo come√ßar
         if (PhotonNetwork.CurrentRoom.CustomProperties.ContainsKey(CustomRoomProperties.GameStarted) &&
             (bool)PhotonNetwork.CurrentRoom.CustomProperties[CustomRoomProperties.GameStarted])
         {
@@ -148,7 +158,7 @@ public class LobbyManager : MonoBehaviourPunCallbacks
             return;
         }
 
-        // 1. SincronizaÁ„o do StartTime (st)
+        // 1. Sincroniza√ß√£o do StartTime (st)
         if (propertiesThatChanged.ContainsKey(CustomRoomProperties.StartTime))
         {
             object stValue = propertiesThatChanged[CustomRoomProperties.StartTime];
@@ -157,7 +167,7 @@ public class LobbyManager : MonoBehaviourPunCallbacks
             {
                 startTime = (double)stValue;
 
-                // Determina a duraÁ„o correta com base no n˙mero de jogadores no momento
+                // Determina a dura√ß√£o correta com base no n√∫mero de jogadores no momento
                 if (PhotonNetwork.CurrentRoom.PlayerCount >= MAX_PLAYERS)
                 {
                     countdownDuration = WAIT_TIME_FULL_ROOM; // 5s se estiver cheio
@@ -168,29 +178,57 @@ public class LobbyManager : MonoBehaviourPunCallbacks
                 }
 
                 isCountingDown = true;
-                Debug.Log($"Timer sincronizado. DuraÁ„o: {countdownDuration}s. InÌcio: {startTime}");
+                
+                // --- CORRE√á√ÉO APLICADA (Linha 188) ---
+                double elapsed = PhotonNetwork.Time - startTime;
+                elapsed = System.Math.Max(0.0, elapsed); // Usamos System.Math para doubles
+
+                remainingTime = Mathf.Max(0f, countdownDuration - (float)elapsed);
+
+                Debug.Log($"Timer sincronizado. Dura√ß√£o: {countdownDuration}s. In√≠cio: {startTime}. Tempo Restante Inicial: {remainingTime}s.");
             }
             else
             {
                 // Se o valor for null, significa que o MasterClient parou o timer
                 isCountingDown = false;
-                UpdateCountdownUI(0f); // Reseta a UI do tempo
+                startTime = 0; // Resetar startTime quando o timer para.
+                remainingTime = 0f; // Resetar remainingTime
             }
         }
 
         // Atualiza a UI para todos os clientes (lista de jogadores, etc.)
         UpdateLobbyUI();
+        // For√ßar atualiza√ß√£o da UI do timer ap√≥s qualquer propriedade de sala mudar
+        UpdateCountdownUI(remainingTime);
     }
 
 
-    // --- L”GICA DE INÕCIO DE JOGO (MASTER CLIENT APENAS) ---
+    // --- L√ìGICA DE IN√çCIO DE JOGO (MASTER CLIENT APENAS) ---
 
-    // Verifica as condiÁıes de inÌcio e ajusta o timer (APENAS MasterClient)
+    // Verifica as condi√ß√µes de in√≠cio e ajusta o timer (APENAS MasterClient)
     private void CheckStartConditions()
     {
         if (!PhotonNetwork.IsMasterClient) return;
 
+        Debug.Log("Passed master client verifiation");
+
         int currentPlayers = PhotonNetwork.CurrentRoom.PlayerCount;
+
+        Debug.Log(currentPlayers + " players in room.");
+
+        // Obter o estado atual da propriedade GameStarted da sala para evitar reiniciar o timer se o jogo j√° come√ßou
+        bool gameAlreadyStarted = false;
+        if (PhotonNetwork.CurrentRoom.CustomProperties.ContainsKey(CustomRoomProperties.GameStarted))
+        {
+            gameAlreadyStarted = (bool)PhotonNetwork.CurrentRoom.CustomProperties[CustomRoomProperties.GameStarted];
+        }
+
+        if (gameAlreadyStarted)
+        {
+            // O jogo j√° come√ßou, n√£o precisamos mais verificar as condi√ß√µes de in√≠cio do timer.
+            Debug.Log("Game already started, not adjusting timer conditions.");
+            return;
+        }
 
         if (currentPlayers >= MAX_PLAYERS)
         {
@@ -202,7 +240,11 @@ public class LobbyManager : MonoBehaviourPunCallbacks
         }
         else if (currentPlayers >= 2)
         {
-            SetStartTime(WAIT_TIME_FOR_SECOND_PLAYER);
+            // Apenas inicia a contagem se ainda n√£o estiver a contar ou se a dura√ß√£o mudou
+            if (!isCountingDown || countdownDuration != WAIT_TIME_FOR_SECOND_PLAYER)
+            {
+                SetStartTime(WAIT_TIME_FOR_SECOND_PLAYER);
+            }
         }
         else
         {
@@ -216,13 +258,23 @@ public class LobbyManager : MonoBehaviourPunCallbacks
     {
         countdownDuration = duration;
 
-        Hashtable props = new Hashtable
+        // S√≥ define o StartTime se o timer ainda n√£o estiver a correr ou se a dura√ß√£o for diferente
+        if (!isCountingDown || 
+            (PhotonNetwork.CurrentRoom.CustomProperties.ContainsKey(CustomRoomProperties.StartTime) && 
+            (double)PhotonNetwork.CurrentRoom.CustomProperties[CustomRoomProperties.StartTime] == 0) || // Se estiver parado (StartTime = 0)
+            Mathf.Abs((float)(PhotonNetwork.Time - startTime - countdownDuration)) > 0.1f) // Ou se o tempo restante for muito diferente
         {
-            { CustomRoomProperties.StartTime, PhotonNetwork.Time }
-        };
+            Hashtable props = new Hashtable
+            {
+                { CustomRoomProperties.StartTime, PhotonNetwork.Time }
+            };
 
-        PhotonNetwork.CurrentRoom.SetCustomProperties(props);
-        isCountingDown = true;
+            PhotonNetwork.CurrentRoom.SetCustomProperties(props);
+            isCountingDown = true;
+            Debug.Log($"MasterClient iniciou/resetou timer. Dura√ß√£o: {duration}s. Tempo Photon: {PhotonNetwork.Time}");
+        } else {
+            Debug.Log($"MasterClient: Timer j√° ativo com dura√ß√£o correta ({duration}s), sem necessidade de reiniciar.");
+        }
     }
 
     // Para a contagem regressiva (APENAS MasterClient)
@@ -234,12 +286,14 @@ public class LobbyManager : MonoBehaviourPunCallbacks
             // Define a propriedade como 'null' para parar a contagem em todos os clientes
             Hashtable props = new Hashtable { { CustomRoomProperties.StartTime, null } };
             PhotonNetwork.CurrentRoom.SetCustomProperties(props);
+            startTime = 0; // Resetar startTime
+            remainingTime = 0f; // Resetar remainingTime
 
             Debug.Log("Contagem regressiva parada.");
         }
     }
 
-    // --- INÕCIO DA PARTIDA (MASTER CLIENT) ---
+    // --- IN√çCIO DA PARTIDA (MASTER CLIENT) ---
 
     private void StartGame()
     {
@@ -247,12 +301,14 @@ public class LobbyManager : MonoBehaviourPunCallbacks
 
         isCountingDown = false;
 
-        // O MasterClient define a propriedade da sala para que todos os clientes saibam que o jogo comeÁou
+        // O MasterClient define a propriedade da sala para que todos os clientes saibam que o jogo come√ßou
         Hashtable props = new Hashtable { { CustomRoomProperties.GameStarted, true } };
         PhotonNetwork.CurrentRoom.SetCustomProperties(props);
+        startTime = 0; // Resetar startTime quando o jogo come√ßa.
+        remainingTime = 0f; // Resetar remainingTime
     }
 
-    // --- L”GICA DE TRANSI«√O PARA O JOGO (TODOS OS CLIENTES) ---
+    // --- L√ìGICA DE TRANSI√á√ÉO PARA O JOGO (TODOS OS CLIENTES) ---
 
     private void GameStartLogic()
     {
@@ -263,13 +319,12 @@ public class LobbyManager : MonoBehaviourPunCallbacks
         GameStartedAndPlayerCanMove = true;
 
         // 1. Desativa a tela de espera
-        //   VerificaÁ„o de seguranÁa adicional antes de usar a referÍncia
         if (lobbyPanel != null)
         {
             lobbyPanel.SetActive(false);
         }
 
-        // 2. Desativa a c‚mera do Lobby AGORA que o jogador vai dar spawn
+        // 2. Desativa a c√¢mera do Lobby AGORA que o jogador vai dar spawn
         if (RoomManager.instance != null && RoomManager.instance.roomCam != null)
         {
             RoomManager.instance.roomCam.SetActive(false);
@@ -282,21 +337,26 @@ public class LobbyManager : MonoBehaviourPunCallbacks
             RoomManager.instance.RespawnPlayer();
         }
 
-        // 4. Fecha a sala para novos jogadores
+        // 4. Fechea sala para novos jogadores
         if (PhotonNetwork.IsMasterClient)
         {
             PhotonNetwork.CurrentRoom.IsOpen = false;
         }
+
+        // Resetar o estado do lobby
+        isCountingDown = false;
+        startTime = 0;
+        remainingTime = 0f;
     }
 
-    // --- L”GICA DA UI ---
+    // --- L√ìGICA DA UI ---
 
     // Atualiza a lista de jogadores e o estado de espera
     private void UpdateLobbyUI()
     {
         if (!PhotonNetwork.InRoom) return;
 
-        //   CORRE«√O DE ERRO: Garante que a referÍncia playerListText existe
+        // CORRE√á√ÉO DE ERRO: Garante que a refer√™ncia playerListText existe
         if (playerListText == null) return;
 
         // 1. Atualiza a lista de jogadores
@@ -312,17 +372,32 @@ public class LobbyManager : MonoBehaviourPunCallbacks
     // Atualiza o texto do timer
     private void UpdateCountdownUI(float time)
     {
-        //   CORRE«√O DE ERRO: Garante que a referÍncia countdownText existe
+        // CORRE√á√ÉO DE ERRO: Garante que a refer√™ncia countdownText existe
         if (countdownText == null) return;
 
-        // Se a contagem parou ou o jogo comeÁou, mostra uma mensagem est·tica
+        // Se a contagem parou ou o jogo come√ßou, mostra uma mensagem est√°tica
+        // Verificar se o jogo j√° come√ßou antes de exibir mensagens de espera
+        bool gameAlreadyStarted = false;
+        if (PhotonNetwork.CurrentRoom != null && PhotonNetwork.CurrentRoom.CustomProperties.ContainsKey(CustomRoomProperties.GameStarted))
+        {
+            gameAlreadyStarted = (bool)PhotonNetwork.CurrentRoom.CustomProperties[CustomRoomProperties.GameStarted];
+        }
+
+        if (gameAlreadyStarted)
+        {
+            // Se o jogo j√° come√ßou, o UI do lobby n√£o deve estar ativo, mas por seguran√ßa, limpa o texto.
+            countdownText.text = ""; 
+            return;
+        }
+
+
         if (!isCountingDown || time <= 0)
         {
             if (PhotonNetwork.CurrentRoom.PlayerCount < 2)
             {
-                countdownText.text = $"Aguardando 1∞ jogador...\n(MÌnimo de 2 para comeÁar)";
+                countdownText.text = $"Aguardando 1¬∫ jogador...\n(M√≠nimo de 2 para come√ßar)";
             }
-            else if (PhotonNetwork.CurrentRoom.PlayerCount >= 2 && !isCountingDown)
+            else 
             {
                 countdownText.text = $"Partida em espera. Contagem regressiva parada.";
             }
@@ -338,11 +413,11 @@ public class LobbyManager : MonoBehaviourPunCallbacks
         // Exibe a mensagem de acordo com o estado
         if (PhotonNetwork.CurrentRoom.PlayerCount >= MAX_PLAYERS)
         {
-            countdownText.text = $"SALA CHEIA! Partida comeÁa em: \n**{timeString}**";
+            countdownText.text = $"SALA CHEIA! Partida come√ßa em: \n**{timeString}**";
         }
         else
         {
-            countdownText.text = $"InÌcio da Partida em: \n**{timeString}**";
+            countdownText.text = $"In√≠cio da Partida em: \n**{timeString}**";
         }
     }
 }
