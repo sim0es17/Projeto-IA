@@ -17,7 +17,9 @@ public class DeathMenu : MonoBehaviour
     void Awake()
     {
         if (panel != null) panel.SetActive(false);
-        if (deathCamera != null) deathCamera.enabled = false;
+
+        // TESTE: Vamos deixar a câmara LIGADA desde o início para ver se ela renderiza
+        if (deathCamera != null) deathCamera.enabled = true;
     }
 
     public void Show()
@@ -31,15 +33,19 @@ public class DeathMenu : MonoBehaviour
 
         if (deathCamera != null)
         {
+            // PASSO CRUCIAL: Garante que o OBJETO está ligado primeiro!
+            deathCamera.gameObject.SetActive(true);
+
+            // Depois liga o componente câmara
             deathCamera.enabled = true;
-            Debug.Log("[DeathMenu] deathCamera.enabled = " + deathCamera.enabled);
+
+            Debug.Log("[DeathMenu] deathCamera ligada com sucesso.");
         }
         else
         {
             Debug.LogWarning("[DeathMenu] deathCamera NÃO está ligada no Inspector!");
         }
     }
-
     // BOTÃO: Restart
     public void Restart()
     {
