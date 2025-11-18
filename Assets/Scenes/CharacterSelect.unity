@@ -2278,7 +2278,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a4ceedf366b36944fbcd36df86e24273, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  sceneToLoad: TrainingGround
+  sceneToLoad: ArenaSelect
 --- !u!114 &1795501804
 MonoBehaviour:
   m_ObjectHideFlags: 0
