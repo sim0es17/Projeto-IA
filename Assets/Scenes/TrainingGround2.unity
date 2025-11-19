@@ -1681,6 +1681,7 @@ GameObject:
   m_Component:
   - component: {fileID: 746587099}
   - component: {fileID: 746587098}
+  - component: {fileID: 746587100}
   m_Layer: 9
   m_Name: BackGround
   m_TagString: Untagged
@@ -1752,12 +1753,24 @@ Transform:
   m_GameObject: {fileID: 746587097}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 10.6647, y: -9.9048, z: 0}
-  m_LocalScale: {x: 9.550882, y: 6.199329, z: 1}
+  m_LocalPosition: {x: 11.7743, y: -6.9672, z: 0}
+  m_LocalScale: {x: 17.66323, y: 11.464926, z: 1.8493817}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &746587100
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 746587097}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: da85ed3d2c9db5f4ea34f208aeb2cc83, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &800677598
 GameObject:
   m_ObjectHideFlags: 0
