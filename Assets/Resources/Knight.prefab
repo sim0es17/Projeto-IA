@@ -237,7 +237,7 @@ MonoBehaviour:
   attackPoint: {fileID: 8491974259468159439}
   enemyLayers:
     serializedVersion: 2
-    m_Bits: 64
+    m_Bits: 192
   defenseCooldown: 0.2
   isDefending: 0
   hitVFX: {fileID: 9081207694187098227, guid: a14c85ec1b7dde140924e194f58c2f0b, type: 3}
