@@ -4946,6 +4946,22 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 3119757727159315871, guid: 7642424fe0acb424f95a49107eb1c530, type: 3}
+      propertyPath: m_Size.x
+      value: 114.49961
+      objectReference: {fileID: 0}
+    - target: {fileID: 3119757727159315871, guid: 7642424fe0acb424f95a49107eb1c530, type: 3}
+      propertyPath: m_Size.y
+      value: 27.393456
+      objectReference: {fileID: 0}
+    - target: {fileID: 3119757727159315871, guid: 7642424fe0acb424f95a49107eb1c530, type: 3}
+      propertyPath: m_Offset.x
+      value: 34.205822
+      objectReference: {fileID: 0}
+    - target: {fileID: 3119757727159315871, guid: 7642424fe0acb424f95a49107eb1c530, type: 3}
+      propertyPath: m_Offset.y
+      value: 1.6659336
+      objectReference: {fileID: 0}
     - target: {fileID: 3503474326470348432, guid: 7642424fe0acb424f95a49107eb1c530, type: 3}
       propertyPath: m_Name
       value: Power-up Health
