@@ -491,7 +491,7 @@ GameObject:
   - component: {fileID: 136816116}
   - component: {fileID: 136816115}
   m_Layer: 5
-  m_Name: Leadeboar
+  m_Name: Leaderboar
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
