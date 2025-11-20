@@ -12,60 +12,50 @@ public class SceneCameraConfig : MonoBehaviour
     public float leftTriggerX = -15f;
     public float rightTriggerX = 73f;
 
-    // Margem extra para o countdown não começar exatamente na linha da câmara
-    // Se a câmara para no 73, o countdown começa no 78 (73 + 5)
+    // Margem extra para o countdown começar um pouco DEPOIS da câmara parar
     private float buffer = 5f;
 
     private IEnumerator Start()
     {
-        Debug.Log("[SceneCameraConfig] À espera do Player...");
-
-        // 1. Espera até o Player nascer
+        // 1. Espera até o Player nascer na cena
         while (GameObject.FindGameObjectWithTag("Player") == null)
         {
             yield return null;
         }
 
         GameObject player = GameObject.FindGameObjectWithTag("Player");
-        Camera cam = Camera.main; // A câmara deve estar no player
+        // Assume que a câmara está dentro do player ou é a MainCamera
+        Camera cam = Camera.main;
 
-        Debug.Log("[SceneCameraConfig] A configurar tudo para este mapa...");
+        Debug.Log("[SceneCameraConfig] Player detetado! A configurar a cena...");
 
-        // --- 1. CONFIGURAR ZOOM (CameraDynamicZoom) ---
+        // --- A. CONFIGURAR ZOOM ---
         CameraDynamicZoom dyn = cam.GetComponent<CameraDynamicZoom>();
         if (dyn != null)
         {
             dyn.ConfigureForScene(introStartSize, normalSize, edgeSize, leftTriggerX, rightTriggerX);
         }
 
-        // --- 2. CONFIGURAR LIMITES FÍSICOS DA CÂMARA (CameraFollowLimited) ---
+        // --- B. CONFIGURAR LIMITES FÍSICOS DA CÂMARA ---
+        // Alargamos os limites físicos para a câmara não travar antes do trigger de zoom
         CameraFollowLimited follow = cam.GetComponent<CameraFollowLimited>();
         if (follow != null)
         {
-            // Dá folga física para a câmara não travar antes do tempo
             follow.minX = leftTriggerX - 50f;
             follow.maxX = rightTriggerX + 50f;
         }
 
-        // --- 3. CONFIGURAR MORTE (OutOfArenaCountdown) ---
-        // É AQUI QUE RESOLVEMOS O TEU PROBLEMA DO 18.1
+        // --- C. CONFIGURAR MORTE (OutOfArenaCountdown) ---
+        // Resolve o problema do limite 18.1 antigo!
         OutOfArenaCountdown deathScript = player.GetComponent<OutOfArenaCountdown>();
 
         if (deathScript != null)
         {
-            // Atualiza o limite ESQUERDO
-            // Mantém o Y original, muda só o X para o novo valor (-15 - buffer)
+            // Atualiza os limites de morte com base no tamanho do mapa + margem (buffer)
             deathScript.minBounds = new Vector2(leftTriggerX - buffer, deathScript.minBounds.y);
-
-            // Atualiza o limite DIREITO
-            // Mantém o Y original, muda só o X para o novo valor (73 + buffer)
             deathScript.maxBounds = new Vector2(rightTriggerX + buffer, deathScript.maxBounds.y);
 
             Debug.Log($"[SceneCameraConfig] Limites de Morte atualizados para: {deathScript.minBounds.x} e {deathScript.maxBounds.x}");
-        }
-        else
-        {
-            Debug.LogWarning("ATENÇÃO: Não encontrei o script 'OutOfArenaCountdown' no Player!");
         }
     }
 }
