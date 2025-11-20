@@ -1,5 +1,4 @@
 using UnityEngine;
-using System.Collections;
 
 [RequireComponent(typeof(SpriteRenderer))]
 public class FitBackgroundToCamera : MonoBehaviour
@@ -10,51 +9,39 @@ public class FitBackgroundToCamera : MonoBehaviour
     private void Awake()
     {
         sr = GetComponent<SpriteRenderer>();
-    }
-
-    private IEnumerator Start()
-    {
-        // Espera até existir uma MainCamera (como a tua está no player)
-        while (Camera.main == null)
-            yield return null;
-
         cam = Camera.main;
-
-        AjustarEscalaAoEcrã();
-    }
-
-    private void AjustarEscalaAoEcrã()
-    {
-        if (sr == null || cam == null) return;
-
-        // Fundo sempre atrás de tudo
-        sr.sortingOrder = -10;
-
-        // Tamanho visível da câmara
-        float camHeight = cam.orthographicSize * 2f;
-        float camWidth = camHeight * cam.aspect;
-
-        // Tamanho do sprite
-        float spriteHeight = sr.sprite.bounds.size.y;
-        float spriteWidth = sr.sprite.bounds.size.x;
-
-        // Fatores de escala para preencher o ecrã
-        float scaleY = camHeight / spriteHeight;
-        float scaleX = camWidth / spriteWidth;
-
-        transform.localScale = new Vector3(scaleX, scaleY, 1f);
     }
 
     private void LateUpdate()
     {
-        if (cam == null) return;
+        if (cam == null || sr == null) return;
 
-        // Faz o fundo seguir sempre a posição da câmara
-        Vector3 camPos = cam.transform.position;
+        // --- 1. POSIÇÃO (Anti-Tremer) ---
+        // O fundo cola-se à posição X e Y da câmara.
+        // O Z fica a 10 positivo para garantir que está no fundo.
         transform.position = new Vector3(
-            camPos.x,
-            camPos.y,
-            transform.position.z // mantém o Z como está
+            cam.transform.position.x,
+            cam.transform.position.y,
+            10f
         );
+
+        // --- 2. ESCALA (Preencher Ecrã) ---
+        float camHeight = cam.orthographicSize * 2f;
+        float camWidth = camHeight * cam.aspect;
+
+        float spriteHeight = sr.sprite.bounds.size.y;
+        float spriteWidth = sr.sprite.bounds.size.x;
+
+        // Calcula a proporção para não deformar a imagem
+        float scaleY = camHeight / spriteHeight;
+        float scaleX = camWidth / spriteWidth;
+
+        // Usa o MAIOR valor para garantir que não sobram buracos
+        float finalScale = Mathf.Max(scaleX, scaleY);
+
+        transform.localScale = new Vector3(finalScale, finalScale, 1f);
+
+        // --- 3. ORDEM (Atrás de tudo) ---
+        sr.sortingOrder = -100;
     }
 }
