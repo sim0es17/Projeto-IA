@@ -3080,7 +3080,7 @@ MonoBehaviour:
   introStartSize: 20
   normalSize: 6
   edgeSize: 9
-  leftTriggerX: -35
+  leftTriggerX: -25
   rightTriggerX: 73
 --- !u!1 &1340221099
 GameObject:
