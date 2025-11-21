@@ -1195,9 +1195,11 @@ MonoBehaviour:
   introStartSize: 12
   normalSize: 6
   edgeSize: 9
-  leftTriggerX: -8
-  rightTriggerX: 8
-  cameraMinY: -10
+  leftTriggerX: -11
+  rightTriggerX: 32
+  cameraMinY: -15
+  bottomLimitY: -25
+  topLimitY: 30
 --- !u!61 &459681329 stripped
 BoxCollider2D:
   m_CorrespondingSourceObject: {fileID: 4475217845798280089, guid: de8cfb4cfb7d4ec42aa9bd016840f298, type: 3}
@@ -2454,9 +2456,21 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 1302752626657400358, guid: 149abd19ac8b3cd4e9490d06153fe1f1, type: 3}
+      propertyPath: m_text
+      value: Arena 2
+      objectReference: {fileID: 0}
     - target: {fileID: 1827609992091149202, guid: 149abd19ac8b3cd4e9490d06153fe1f1, type: 3}
       propertyPath: m_RenderMode
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4760759316104611353, guid: 149abd19ac8b3cd4e9490d06153fe1f1, type: 3}
+      propertyPath: nextLevelSceneName
+      value: TrainingGround2
+      objectReference: {fileID: 0}
+    - target: {fileID: 5048578580719735310, guid: 149abd19ac8b3cd4e9490d06153fe1f1, type: 3}
+      propertyPath: scoreToWin
+      value: 100
       objectReference: {fileID: 0}
     - target: {fileID: 6624541338861994163, guid: 149abd19ac8b3cd4e9490d06153fe1f1, type: 3}
       propertyPath: m_Pivot.x

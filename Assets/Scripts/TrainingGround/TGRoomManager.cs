@@ -4,6 +4,7 @@ using UnityEngine;
 using Photon.Pun;
 using UnityEngine.SceneManagement;
 using Photon.Realtime;
+using Photon.Pun.UtilityScripts; // <--- IMPORTANTE PARA O SetScore FUNCIONAR
 
 public class TGRoomManager : MonoBehaviourPunCallbacks
 {
@@ -28,7 +29,6 @@ public class TGRoomManager : MonoBehaviourPunCallbacks
 
     void Awake()
     {
-        // Garante que só existe um Manager por cena
         if (instance != null)
         {
             Destroy(gameObject);
@@ -43,14 +43,12 @@ public class TGRoomManager : MonoBehaviourPunCallbacks
         // Verifica se já estamos ligados ao Photon (porque viemos de outra arena)
         if (PhotonNetwork.IsConnectedAndReady)
         {
-            Debug.Log("Já estamos ligados ao Photon! A entrar no Lobby...");
+            Debug.Log("Já estamos ligados ao Photon! A preparar entrada...");
 
             // Se já estivermos numa sala antiga, saímos primeiro
             if (PhotonNetwork.InRoom)
             {
                 PhotonNetwork.LeaveRoom();
-                // O callback OnLeftRoom trataria do resto, mas para simplificar,
-                // vamos deixar o Photon gerir a saída e reentrada.
             }
             else
             {
@@ -85,8 +83,7 @@ public class TGRoomManager : MonoBehaviourPunCallbacks
         };
 
         // --- CORREÇÃO DE NOME DA SALA ---
-        // Usamos o nome da cena atual para criar a sala.
-        // Assim, quem está na "Arena 2" não entra na sala da "Arena 3".
+        // Cria uma sala específica para esta cena (ex: Room_Arena3)
         string currentSceneName = SceneManager.GetActiveScene().name;
         string roomName = "Room_" + currentSceneName;
 
@@ -96,6 +93,13 @@ public class TGRoomManager : MonoBehaviourPunCallbacks
 
     public override void OnJoinedRoom()
     {
+        base.OnJoinedRoom();
+
+        // --- RESET DO SCORE (NOVO) ---
+        // Garante que o jogador começa com 0 pontos nesta nova arena
+        PhotonNetwork.LocalPlayer.SetScore(0);
+        Debug.Log("Score resetado para 0.");
+
         Debug.Log("Player has joined the Room: " + PhotonNetwork.CurrentRoom.Name);
 
         // Fecha a sala
@@ -127,7 +131,7 @@ public class TGRoomManager : MonoBehaviourPunCallbacks
         Debug.LogWarning($"[TGRoomManager] Desconectado. Causa: {cause}");
     }
 
-    // --- RESTO DO CÓDIGO (Igual ao teu original) ---
+    // --- SAIR PARA O MENU ---
 
     public void LeaveGameAndGoToMenu(string menuSceneName)
     {
@@ -151,6 +155,8 @@ public class TGRoomManager : MonoBehaviourPunCallbacks
         activeEnemies.Clear();
     }
 
+    // --- PLAYER SPAWN ---
+
     public void RespawnPlayer()
     {
         Transform spawnPoint = spawnPoints[Random.Range(0, spawnPoints.Length)];
@@ -169,6 +175,8 @@ public class TGRoomManager : MonoBehaviourPunCallbacks
         Health health = _player.GetComponent<Health>();
         if (health != null) health.isLocalPlayer = true;
     }
+
+    // --- ENEMY SPAWN ---
 
     private void SpawnInitialEnemies()
     {

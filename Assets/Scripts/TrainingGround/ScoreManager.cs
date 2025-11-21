@@ -1,6 +1,7 @@
 using UnityEngine;
 using Photon.Pun;
-using Photon.Pun.UtilityScripts; // Importante para ler o Score do Photon
+using Photon.Pun.UtilityScripts;
+using System.Collections;
 
 public class ScoreManager : MonoBehaviour
 {
@@ -11,31 +12,52 @@ public class ScoreManager : MonoBehaviour
     public GameObject winPanel;
 
     private bool gameEnded = false;
+    private bool canCheckWin = false;
 
     private void Awake()
     {
         if (instance == null) instance = this;
+
+        // --- SOLUÇÃO NUCLEAR ---
+        // O Awake corre ANTES de tudo. 
+        // Força bruta para desligar o painel, independentemente de como ele foi salvo.
+        if (winPanel != null)
+        {
+            winPanel.SetActive(false);
+            Debug.Log("ScoreManager: WinPanel desligado no Awake à força.");
+        }
     }
 
-    private void Start()
+    private IEnumerator Start()
     {
-        if (winPanel != null) winPanel.SetActive(false);
+        gameEnded = false;
+        canCheckWin = false;
+
+        // Segurança extra: espera 2 segundos antes de sequer OLHAR para o score
+        Debug.Log("ScoreManager: A aguardar sincronização...");
+        yield return new WaitForSeconds(2f);
+
+        canCheckWin = true;
+        Debug.Log("ScoreManager: Pronto para verificar vitórias.");
     }
 
     private void Update()
     {
-        // Se o jogo já acabou, não fazemos mais nada
-        if (gameEnded) return;
+        // Se ainda estamos no tempo de espera (Start), não fazemos nada
+        if (!canCheckWin || gameEnded) return;
 
-        // --- AQUI ESTÁ A CORREÇÃO ---
-        // Em vez de usarmos uma variável local, lemos diretamente do Photon
-        // (Assim ficamos sincronizados com o que aparece no ScoreUI)
-        int networkScore = PhotonNetwork.LocalPlayer.GetScore();
-
-        // Verifica se já chegámos à meta
-        if (networkScore >= scoreToWin)
+        // Só verificamos se estivermos mesmo ligados
+        if (PhotonNetwork.IsConnectedAndReady && PhotonNetwork.InRoom)
         {
-            WinGame();
+            int networkScore = PhotonNetwork.LocalPlayer.GetScore();
+
+            // Se o Photon ainda tiver o score antigo (700) por erro de sincronização,
+            // o TGRoomManager deve resetá-lo em breve.
+            // Mas se o score for alto E já passou o tempo de espera, então ganhámos.
+            if (networkScore >= scoreToWin)
+            {
+                WinGame();
+            }
         }
     }
 

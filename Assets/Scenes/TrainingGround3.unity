@@ -969,6 +969,14 @@ PrefabInstance:
       propertyPath: m_RenderMode
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 4760759316104611353, guid: 149abd19ac8b3cd4e9490d06153fe1f1, type: 3}
+      propertyPath: nextLevelSceneName
+      value: TrainingGround4
+      objectReference: {fileID: 0}
+    - target: {fileID: 6166007977396806821, guid: 149abd19ac8b3cd4e9490d06153fe1f1, type: 3}
+      propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 6624541338861994163, guid: 149abd19ac8b3cd4e9490d06153fe1f1, type: 3}
       propertyPath: m_Pivot.x
       value: 0
@@ -2554,9 +2562,11 @@ MonoBehaviour:
   introStartSize: 20
   normalSize: 6
   edgeSize: 9
-  leftTriggerX: -15
-  rightTriggerX: 15
-  cameraMinY: -10
+  leftTriggerX: -25
+  rightTriggerX: 65
+  cameraMinY: -35
+  bottomLimitY: -29
+  topLimitY: 30
 --- !u!1 &1329650058
 GameObject:
   m_ObjectHideFlags: 0
