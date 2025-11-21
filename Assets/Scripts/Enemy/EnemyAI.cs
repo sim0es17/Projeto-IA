@@ -5,7 +5,8 @@ using ExitGames.Client.Photon;
 
 // Garante que o objeto inimigo tem estes componentes
 [RequireComponent(typeof(Rigidbody2D), typeof(PhotonView))]
-public class EnemyAI : MonoBehaviourPunCallbacks
+// MUDANÇA 1: Herda de EnemyBase para funcionar com o EnemyHealth
+public class EnemyAI : EnemyBase 
 {
     // --- 1. DEFINIÇÃO DE ESTADOS ---
     public enum AIState
@@ -49,9 +50,9 @@ public class EnemyAI : MonoBehaviourPunCallbacks
     public Transform attackPoint;
     public LayerMask playerLayer; // Layer Mask para o OverlapCircle (onde procura)
 
-    // Propriedades públicas
-    public float KnockbackForce => knockbackForce;
-    public float StunTime => stunTime;
+    // MUDANÇA 2: Adicionado 'override' para cumprir o contrato do EnemyBase
+    public override float KnockbackForce => knockbackForce;
+    public override float StunTime => stunTime;
 
     // --- 3. VARIÁVEIS PRIVADAS ---
 
@@ -222,29 +223,12 @@ public class EnemyAI : MonoBehaviourPunCallbacks
             return;
         }
 
-        Debug.Log($"⚔️ [TENTATIVA DE ATAQUE] Posição: {attackPoint.position} | Raio: {attackRange}");
-
-        // 1. Deteção de colisores
         Collider2D[] hitPlayers = Physics2D.OverlapCircleAll(attackPoint.position, attackRange, playerLayer);
-
-        Debug.Log($"👀 [RESULTADO] Objetos encontrados na Layer do Player: {hitPlayers.Length}");
-
-        if (hitPlayers.Length == 0)
-        {
-            Debug.LogWarning("⚠️ [MISS] O ataque não acertou em nada.");
-        }
 
         foreach (Collider2D hit in hitPlayers)
         {
-            // 🌟 NOVO FILTRO DE TAG 🌟
-            // Só avança se o objeto detetado tiver a Tag "Player" (evita atingir outros Enemies/Orcs)
-            if (!hit.CompareTag("Player"))
-            {
-                Debug.Log($"[FILTRO] Colisor {hit.name} ignorado. Não tem a Tag 'Player'.");
-                continue; // Passa para o próximo objeto no loop
-            }
+            if (!hit.CompareTag("Player")) continue;
 
-            // Tenta encontrar os componentes (usa GetComponentInParent para estrutura complexa)
             PhotonView targetView = hit.GetComponentInParent<PhotonView>();
             Health playerHealth = hit.GetComponentInParent<Health>();
             CombatSystem2D playerCombat = hit.GetComponentInParent<CombatSystem2D>();
@@ -254,7 +238,6 @@ public class EnemyAI : MonoBehaviourPunCallbacks
                 bool playerDefending = (playerCombat != null && playerCombat.isDefending);
                 int finalDamage = playerDefending ? attackDamage / 4 : attackDamage;
 
-                // RPC de Dano
                 targetView.RPC(
                     nameof(Health.TakeDamageComplete),
                     RpcTarget.All,
@@ -263,19 +246,13 @@ public class EnemyAI : MonoBehaviourPunCallbacks
                     knockbackForce,
                     stunTime
                 );
-
-                Debug.Log($"✅ [SUCESSO] Dano enviado: {finalDamage} para {hit.name}");
-            }
-            else
-            {
-                // Este erro só aparece agora se o objeto tiver a Tag Player, mas faltar o Health/PhotonView
-                Debug.LogError($"⛔ [ERRO ESTRUTURA] {hit.name} tem a Tag 'Player', mas falta o Health/PhotonView!");
             }
         }
     }
 
+    // MUDANÇA 3: Adicionado 'override' para substituir o método abstrato do EnemyBase
     [PunRPC]
-    public void ApplyKnockbackRPC(Vector2 direction, float force, float time)
+    public override void ApplyKnockbackRPC(Vector2 direction, float force, float time)
     {
         if (!PhotonNetwork.IsMasterClient) return;
         currentState = AIState.Stunned;
