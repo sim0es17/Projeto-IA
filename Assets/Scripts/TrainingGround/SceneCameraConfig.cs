@@ -13,9 +13,13 @@ public class SceneCameraConfig : MonoBehaviour
     public float rightTriggerX = 73f;
 
     [Header("Limite Vertical (Y) - Onde a câmara para de descer")]
-    public float cameraMinY = -10f; // <--- NOVO: Controla o fundo da câmara
+    public float cameraMinY = -10f;
 
-    // Margem para o countdown
+    [Header("Limites de Morte (Y) - Altura da Arena")]
+    public float bottomLimitY = -25f; // <--- NOVO: O fundo do mapa
+    public float topLimitY = 30f;     // <--- NOVO: O teto do mapa
+
+    // Margem para o countdown horizontal
     private float buffer = 5f;
 
     private IEnumerator Start()
@@ -35,24 +39,27 @@ public class SceneCameraConfig : MonoBehaviour
             dyn.ConfigureForScene(introStartSize, normalSize, edgeSize, leftTriggerX, rightTriggerX);
         }
 
-        // 2. LIMITES FÍSICOS DA CÂMARA (X e Y)
+        // 2. LIMITES FÍSICOS DA CÂMARA
         CameraFollowLimited follow = cam.GetComponent<CameraFollowLimited>();
         if (follow != null)
         {
-            // Limites horizontais (com folga)
             follow.minX = leftTriggerX - 50f;
             follow.maxX = rightTriggerX + 50f;
 
-            // Limite VERTICAL (Aqui está a correção!)
+            // Define onde a câmara para de descer
             follow.minY = cameraMinY;
         }
 
-        // 3. LIMITES DE MORTE
+        // 3. LIMITES DE MORTE (OutOfArena)
+        // AQUI ESTÁ A CORREÇÃO!
         OutOfArenaCountdown deathScript = player.GetComponent<OutOfArenaCountdown>();
         if (deathScript != null)
         {
-            deathScript.minBounds = new Vector2(leftTriggerX - buffer, deathScript.minBounds.y);
-            deathScript.maxBounds = new Vector2(rightTriggerX + buffer, deathScript.maxBounds.y);
+            // Agora atualizamos TAMBÉM o Y (bottomLimitY e topLimitY)
+            deathScript.minBounds = new Vector2(leftTriggerX - buffer, bottomLimitY);
+            deathScript.maxBounds = new Vector2(rightTriggerX + buffer, topLimitY);
+
+            Debug.Log($"[SceneCameraConfig] Limites de Morte atualizados. X: {deathScript.minBounds.x} a {deathScript.maxBounds.x} | Y: {bottomLimitY} a {topLimitY}");
         }
     }
 }
