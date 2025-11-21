@@ -170,9 +170,15 @@ public class RoomManager : MonoBehaviourPunCallbacks
 
         if (connectigUI != null) connectigUI.SetActive(false); // Esconde a tela de connecting
 
+        // **** CORREÇÃO CRUCIAL PARA INICIALIZAÇÃO DE RESPAWN ****
+        // Define a contagem inicial de respawns assim que o jogador entra na sala.
+        SetInitialRespawnCount(PhotonNetwork.LocalPlayer);
+        // ******************************************************
+        
         // 1. Chama o LobbyManager para iniciar a lógica de espera (UI do Lobby)
         if (LobbyManager.instance != null)
         {
+            // Assume que 'LobbyManager' existe e tem uma instância e o método 'OnRoomEntered'
             LobbyManager.instance.OnRoomEntered();
         }
     }
@@ -227,6 +233,9 @@ public class RoomManager : MonoBehaviourPunCallbacks
         }
 
         // O jogador pode ter respawn *se* tiver chances restantes (respawnsLeft >= 0)
+        // NOTA: Se o jogador tiver 0 respawns restantes, esta função NÃO deve ser chamada 
+        // ou a sua lógica deve ser revista. Assumindo que 0 respawns = 1 vida restante.
+        // O ponto de falha agora é o limite < 0.
         if (respawnsLeft >= 0 && player != null)
         {
             // 1. Obtém a lista de jogadores na sala
@@ -256,7 +265,18 @@ public class RoomManager : MonoBehaviourPunCallbacks
             {
                 // Fallback: Se o índice for inválido ou exceder o número de spawns, usa o primeiro (0)
                 selectedSpawnIndex = 0;
-                spawnPoint = spawnPoints[0];
+                // Previne IndexOutOfRangeException caso spawnPoints esteja vazio, 
+                // embora o check inicial já o faça.
+                if (spawnPoints.Length > 0)
+                {
+                    spawnPoint = spawnPoints[0];
+                }
+                else
+                {
+                    // Se estiver vazio (o que o check inicial deveria ter apanhado)
+                    Debug.LogError("SpawnPoints está vazio no fallback. Abortando Respawn.");
+                    return; 
+                }
                 Debug.LogWarning($"Índice de jogador ({playerIndex}) inválido para Spawn. Usando SpawnPoint #0 como fallback.");
             }
 
@@ -279,10 +299,13 @@ public class RoomManager : MonoBehaviourPunCallbacks
         {
             // O jogador atingiu o limite de respawns ou faltam referências
             Debug.Log($"LIMITE DE RESPAWN ATINGIDO! Jogador {PhotonNetwork.LocalPlayer.NickName} não pode mais dar respawn.");
+            
+            // Lógica de Fim de Jogo (opcional): 
+            // Se quiser forçar o jogador a sair ou mostrar uma tela de game over.
         }
     }
 
-    // Chamado pelo script Health.cs (no cliente que morreu)
+    // Chamado pelo script Health.cs (no MasterClient, para atualizar a contagem de respawn na rede)
     public void OnPlayerDied(Player playerWhoDied)
     {
         // APENAS o MasterClient deve manipular e sincronizar a contagem de respawns
@@ -291,6 +314,8 @@ public class RoomManager : MonoBehaviourPunCallbacks
         int currentRespawnCount = GetRespawnCount(playerWhoDied);
 
         // Só decrementamos se o jogador tiver respawns restantes (currentRespawnCount > 0)
+        // NOTA: Se respawnCount for 0, o respawn será permitido, mas a contagem passará a -1, 
+        // bloqueando o próximo respawn.
         if (currentRespawnCount > 0)
         {
             // Decrementa a contagem de respawns
@@ -302,6 +327,7 @@ public class RoomManager : MonoBehaviourPunCallbacks
 
             Debug.Log($"[MasterClient] Jogador {playerWhoDied.NickName} morreu. Restam {currentRespawnCount} respawn(s).");
         }
+        // Se currentRespawnCount for 0 ou menor, a contagem não é alterada (e o respawn falhará na próxima vez).
     }
 
     private int GetRespawnCount(Player player)

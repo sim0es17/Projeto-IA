@@ -31,7 +31,8 @@ public class Health : MonoBehaviourPunCallbacks
     private void Awake()
     {
         rb = GetComponent<Rigidbody2D>();
-        playerMovement = GetComponent<Movement2D>();
+        // É crucial que haja um script Movement2D no mesmo GameObject
+        playerMovement = GetComponent<Movement2D>(); 
         view = GetComponent<PhotonView>();
     }
 
@@ -57,7 +58,7 @@ public class Health : MonoBehaviourPunCallbacks
     public void TakeDamage(int _damage, int attackerViewID)
     {
         // Chama o método COMPLETO, enviando 0f para knockback/duration.
-        // O código de knockback usará os valores de fallback (knockbackForceFallback).
+        // O código de knockback usará os valores de fallback.
         TakeDamageComplete(_damage, attackerViewID, 0f, 0f);
     }
 
@@ -109,7 +110,8 @@ public class Health : MonoBehaviourPunCallbacks
         if (rb == null || playerMovement == null || isDead || isKnockedBack) return;
 
         Vector2 direction = (transform.position - attackerPosition).normalized;
-        if (direction.y < 0.2f) direction.y = 0.2f;
+        // Garante um ligeiro impulso para cima para sair do chão
+        if (direction.y < 0.2f) direction.y = 0.2f; 
         direction = direction.normalized;
 
         StartCoroutine(KnockbackRoutine(direction, force, duration));
@@ -130,7 +132,7 @@ public class Health : MonoBehaviourPunCallbacks
     }
 
     // ---------------------------------------------------------------------------------
-    // --- 3. LÓGICA DE MORTE E UI ---
+    // --- 3. LÓGICA DE MORTE E UI (COM CHAMADA AO RoomManager PARA RESPAWN) ---
     // ---------------------------------------------------------------------------------
 
     private void HandleDeath(int attackerViewID)
@@ -152,8 +154,23 @@ public class Health : MonoBehaviourPunCallbacks
             }
         }
 
-        // A partir daqui é a lógica que já tinhas
+        // A lógica de Respawn e Network deve ser executada apenas pelo jogador local
         if (!view.IsMine) return;
+
+        // ***** LÓGICA CRUCIAL PARA O RESPAWN *****
+        if (RoomManager.instance != null)
+        {
+            // 1. Notifica o RoomManager para DECREMENTAR a contagem de respawns (feita pelo MasterClient)
+            RoomManager.instance.OnPlayerDied(view.Owner); 
+
+            // 2. Tenta dar RESPAWN imediatamente (o RoomManager verifica se ainda há vidas restantes)
+            RoomManager.instance.RespawnPlayer(); 
+        }
+        else
+        {
+            Debug.LogError("RoomManager não encontrado! Não é possível processar a morte/respawn.");
+        }
+        // ****************************************
 
         // 1. Atualiza a contagem de Mortes (Deaths) no Photon
         int currentDeaths = 0;
@@ -162,9 +179,9 @@ public class Health : MonoBehaviourPunCallbacks
         currentDeaths++;
 
         Hashtable props = new Hashtable
-    {
-        { "Deaths", currentDeaths }
-    };
+        {
+            { "Deaths", currentDeaths }
+        };
         view.Owner.SetCustomProperties(props);
 
         // 2. Notificar o atacante (para KillConfirmed)
@@ -173,11 +190,12 @@ public class Health : MonoBehaviourPunCallbacks
             PhotonView attackerView = PhotonView.Find(attackerViewID);
             if (attackerView != null)
             {
+                // Assume que existe um RPC "KillConfirmed" no script de combate do atacante
                 attackerView.RPC("KillConfirmed", attackerView.Owner);
             }
         }
 
-        // 3. Destrói o objeto na rede
+        // 3. Destrói o objeto na rede (depois de toda a lógica de respawn/kills ter sido acionada)
         PhotonNetwork.Destroy(gameObject);
     }
 
@@ -198,6 +216,7 @@ public class Health : MonoBehaviourPunCallbacks
     {
         if (healthBar != null && originalHealthBarsize > 0)
         {
+            // Atualiza a largura da barra de vida
             healthBar.sizeDelta = new Vector2(
                 originalHealthBarsize * health / (float)maxHealth,
                 healthBar.sizeDelta.y
@@ -206,6 +225,7 @@ public class Health : MonoBehaviourPunCallbacks
 
         if (healthText != null)
         {
+            // Atualiza o texto da vida
             healthText.text = health.ToString();
         }
     }

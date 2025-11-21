@@ -1197,6 +1197,7 @@ MonoBehaviour:
   edgeSize: 9
   leftTriggerX: -8
   rightTriggerX: 8
+  cameraMinY: -10
 --- !u!61 &459681329 stripped
 BoxCollider2D:
   m_CorrespondingSourceObject: {fileID: 4475217845798280089, guid: de8cfb4cfb7d4ec42aa9bd016840f298, type: 3}
@@ -1240,9 +1241,9 @@ MonoBehaviour:
   - {fileID: 2091161267}
   - {fileID: 640034592}
   - {fileID: 870344131}
-  enemyCount: 3
+  enemyCount: 4
   enemyRespawnDelay: 5
-  maxRespawnsPerEnemy: 2
+  maxRespawnsPerEnemy: 1
   tgRoomCam: {fileID: 1740361282}
 --- !u!4 &465664767
 Transform:
