@@ -96,6 +96,7 @@ GameObject:
   - component: {fileID: 1926757949887121013}
   - component: {fileID: 6764933627428410906}
   - component: {fileID: 6568012762042214897}
+  - component: {fileID: 4642842173782732286}
   m_Layer: 6
   m_Name: Orc
   m_TagString: Enemy
@@ -411,6 +412,24 @@ Animator:
   m_AllowConstantClipSamplingOptimization: 1
   m_KeepAnimatorStateOnDisable: 0
   m_WriteDefaultValuesOnDisable: 0
+--- !u!114 &4642842173782732286
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 394211489097314626}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bb78534a379e0754eb03e8bc3fa4b988, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  minBounds: {x: -20.4, y: -20.4}
+  maxBounds: {x: 18.1, y: 18.1}
+  countdownTime: 5
+  countdownText: {fileID: 9002897165148024249}
+  health: {fileID: 6764933627428410906}
+  debugLogs: 0
 --- !u!1 &597729134222289838
 GameObject:
   m_ObjectHideFlags: 0
