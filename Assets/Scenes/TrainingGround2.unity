@@ -3082,6 +3082,7 @@ MonoBehaviour:
   edgeSize: 9
   leftTriggerX: -25
   rightTriggerX: 73
+  cameraMinY: -35
 --- !u!1 &1340221099
 GameObject:
   m_ObjectHideFlags: 0
