@@ -262,7 +262,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   currentState: 0
   chaseRange: 8
-  attackRange: 1.5
+  attackRange: 2
   moveSpeed: 3
   patrolSpeed: 1.5
   patrolDistance: 5

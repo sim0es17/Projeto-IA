@@ -230,9 +230,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   currentState: 0
   chaseRange: 10
-  attackRange: 1.5
-  moveSpeed: 3
-  jumpForce: 8
+  attackRange: 2
+  moveSpeed: 6
+  jumpForce: 10
   cellSize: 0.5
   maxSearchSteps: 200
   pathUpdateRate: 0.25
@@ -241,7 +241,7 @@ MonoBehaviour:
     m_Bits: 8
   knockbackForce: 10
   stunTime: 0.5
-  attackDamage: 7
+  attackDamage: 5
   attackCooldown: 1.5
   attackPoint: {fileID: 8491974259468159439}
   playerLayer:
@@ -286,7 +286,7 @@ Transform:
   m_GameObject: {fileID: 2480449986994863222}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0.0201, y: -0.069, z: 0}
+  m_LocalPosition: {x: -0.007, y: -0.163, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -317,7 +317,7 @@ Transform:
   m_GameObject: {fileID: 6266469831547744066}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0.017, y: 0, z: 0}
+  m_LocalPosition: {x: 0.119, y: 0, z: 0}
   m_LocalScale: {x: 2.09, y: 2.09, z: 2.09}
   m_ConstrainProportionsScale: 0
   m_Children: []
