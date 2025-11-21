@@ -2,7 +2,7 @@ using UnityEngine;
 using Photon.Pun;
 using Photon.Realtime;
 using ExitGames.Client.Photon;
-using UnityEngine.UI;
+using UnityEngine.UI; // Necessário para o Button
 using Hashtable = ExitGames.Client.Photon.Hashtable;
 using TMPro;
 
@@ -24,7 +24,7 @@ public class LobbyManager : MonoBehaviourPunCallbacks
 
     // --- Configurações de Tempo ---
     private const int MAX_PLAYERS = 4;
-    private const float WAIT_TIME_FOR_SECOND_PLAYER = 10f; // 90 segundos para 2+ jogadores
+    private const float WAIT_TIME_FOR_SECOND_PLAYER = 90f; // 90 segundos para 2+ jogadores
     private const float WAIT_TIME_FULL_ROOM = 5f;          // 5 segundos se a sala estiver cheia (4/4)
 
     // --- Variáveis de Sincronização e Estado ---
@@ -39,6 +39,9 @@ public class LobbyManager : MonoBehaviourPunCallbacks
     public TMPro.TextMeshProUGUI countdownText;      // Texto para mostrar o tempo restante
     public TMPro.TextMeshProUGUI playerListText;     // Texto para mostrar a lista de jogadores
 
+    // --- NOVO: Botão para forçar o início (Arraste o botão aqui no Inspector) ---
+    public Button startGameButton;
+
     private void Awake()
     {
         // Garante que haja apenas uma instância do LobbyManager
@@ -51,6 +54,13 @@ public class LobbyManager : MonoBehaviourPunCallbacks
 
         // Garante que o movimento esteja desativado por padrão ao carregar a cena
         GameStartedAndPlayerCanMove = false;
+
+        // --- NOVO: Configurar o botão automaticamente se ele estiver assinado ---
+        if (startGameButton != null)
+        {
+            startGameButton.onClick.AddListener(OnForceStartGame);
+            startGameButton.gameObject.SetActive(false); // Começa invisível por segurança
+        }
     }
 
     // --- ENTRADA NO LOBBY ---
@@ -85,7 +95,7 @@ public class LobbyManager : MonoBehaviourPunCallbacks
         // Só executa a lógica de contagem se estiver na sala e o timer estiver ativo
         if (!PhotonNetwork.InRoom || !isCountingDown)
         {
-            // A UI ainda precisa ser atualizada fora do countdown para mostrar a lista de jogadores
+            // A UI ainda precisa ser atualizada fora do countdown para mostrar a lista de jogadores e botão
             if (lobbyPanel.activeSelf) UpdateLobbyUI();
             return;
         }
@@ -122,7 +132,7 @@ public class LobbyManager : MonoBehaviourPunCallbacks
         {
             CheckStartConditions();
         }
-        UpdateLobbyUI(); // Atualiza a lista de jogadores.
+        UpdateLobbyUI(); // Atualiza a lista de jogadores e visibilidade do botão
     }
 
     public override void OnPlayerLeftRoom(Player otherPlayer)
@@ -132,7 +142,14 @@ public class LobbyManager : MonoBehaviourPunCallbacks
         {
             CheckStartConditions();
         }
-        UpdateLobbyUI(); // Atualiza a lista de jogadores para todos
+        UpdateLobbyUI(); // Atualiza a lista de jogadores para todos e visibilidade do botão
+    }
+
+    public override void OnMasterClientSwitched(Player newMasterClient)
+    {
+        base.OnMasterClientSwitched(newMasterClient);
+        // Se o Host saiu e eu virei o novo Host, preciso atualizar a UI para ver o botão
+        UpdateLobbyUI();
     }
 
     public override void OnRoomPropertiesUpdate(Hashtable propertiesThatChanged)
@@ -293,6 +310,17 @@ public class LobbyManager : MonoBehaviourPunCallbacks
         }
     }
 
+    // --- NOVO: AÇÃO DO BOTÃO "COMEÇAR AGORA" ---
+    public void OnForceStartGame()
+    {
+        // Verifica se é o Host (apenas por segurança, o botão já deve estar oculto para outros)
+        if (PhotonNetwork.IsMasterClient)
+        {
+            Debug.Log("Host forçou o início da partida.");
+            StartGame();
+        }
+    }
+
     // --- INÍCIO DA PARTIDA (MASTER CLIENT) ---
 
     private void StartGame()
@@ -367,6 +395,15 @@ public class LobbyManager : MonoBehaviourPunCallbacks
             players += $"- **{nick}** {(p.IsMasterClient ? "(Host)" : "")}\n";
         }
         playerListText.text = players;
+
+        // --- NOVO: Controla a visibilidade do botão ---
+        // O botão só aparece se:
+        // 1. A variável estiver assinada no Inspector
+        // 2. O jogador local for o Master Client (Host)
+        if (startGameButton != null)
+        {
+            startGameButton.gameObject.SetActive(PhotonNetwork.IsMasterClient);
+        }
     }
 
     // Atualiza o texto do timer

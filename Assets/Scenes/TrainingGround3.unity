@@ -937,9 +937,9 @@ MonoBehaviour:
   - {fileID: 2047050924}
   - {fileID: 823596214}
   - {fileID: 160782581}
-  enemyCount: 3
+  enemyCount: 6
   enemyRespawnDelay: 5
-  maxRespawnsPerEnemy: 2
+  maxRespawnsPerEnemy: 1
   tgRoomCam: {fileID: 1740361282}
 --- !u!4 &465664767
 Transform:
@@ -2556,6 +2556,7 @@ MonoBehaviour:
   edgeSize: 9
   leftTriggerX: -15
   rightTriggerX: 15
+  cameraMinY: -10
 --- !u!1 &1329650058
 GameObject:
   m_ObjectHideFlags: 0
