@@ -12,7 +12,7 @@ GameObject:
   - component: {fileID: 9176188372156640223}
   - component: {fileID: 2687509579939988699}
   m_Layer: 5
-  m_Name: Text (TMP)
+  m_Name: ChatDisplay
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -151,7 +151,7 @@ GameObject:
   - component: {fileID: 2234637909885477413}
   - component: {fileID: 6988018275069845211}
   m_Layer: 5
-  m_Name: GameChat
+  m_Name: ChatManager
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -659,12 +659,12 @@ GameObject:
   - component: {fileID: 8505305747400721279}
   - component: {fileID: 1363828234997203889}
   m_Layer: 5
-  m_Name: InputField (TMP)
+  m_Name: ChatInput
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &6096820749151124223
 RectTransform:
   m_ObjectHideFlags: 0
