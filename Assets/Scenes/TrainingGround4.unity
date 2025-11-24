@@ -1233,7 +1233,7 @@ MonoBehaviour:
   player: {fileID: 61911978259195691, guid: cd1776699e7303a4d8fd3bcc0063242e, type: 3}
   spawnPoints:
   - {fileID: 206189131}
-  enemyPrefab: {fileID: 394211489097314626, guid: 5015fbf96cdfb6348bf4dbf7e57e1b15, type: 3}
+  enemyPrefab: {fileID: 61911978259195691, guid: fa526218435ff194b9ae0206ec7419e3, type: 3}
   enemySpawnPoints:
   - {fileID: 1111065849}
   - {fileID: 2091161267}
