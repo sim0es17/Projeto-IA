@@ -1114,9 +1114,18 @@ PrefabInstance:
       propertyPath: m_RenderMode
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 3653459363896970796, guid: 149abd19ac8b3cd4e9490d06153fe1f1, type: 3}
+      propertyPath: m_text
+      value: "\"As tuas proezas s\xE3o ineg\xE1veis, mas o verdadeiro teste come\xE7a
+        agora. O teu pr\xF3ximo desafio exige 600 pontos. Prepara-te!\""
+      objectReference: {fileID: 0}
     - target: {fileID: 4760759316104611353, guid: 149abd19ac8b3cd4e9490d06153fe1f1, type: 3}
       propertyPath: nextLevelSceneName
       value: TrainingGround4
+      objectReference: {fileID: 0}
+    - target: {fileID: 5048578580719735310, guid: 149abd19ac8b3cd4e9490d06153fe1f1, type: 3}
+      propertyPath: scoreToWin
+      value: 600
       objectReference: {fileID: 0}
     - target: {fileID: 6166007977396806821, guid: 149abd19ac8b3cd4e9490d06153fe1f1, type: 3}
       propertyPath: m_IsActive

@@ -1116,7 +1116,7 @@ PrefabInstance:
     - target: {fileID: 3653459363896970796, guid: 149abd19ac8b3cd4e9490d06153fe1f1, type: 3}
       propertyPath: m_text
       value: "Estas a sair te muito bem as coisas come\xE7am a complicar a partir
-        daqui desta vez o score necess\xE1rio e 500 Boa sorte!"
+        daqui desta vez o score necess\xE1rio \xE9 400. Boa sorte!"
       objectReference: {fileID: 0}
     - target: {fileID: 3653459363896970796, guid: 149abd19ac8b3cd4e9490d06153fe1f1, type: 3}
       propertyPath: m_margin.z
@@ -1124,7 +1124,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 5048578580719735310, guid: 149abd19ac8b3cd4e9490d06153fe1f1, type: 3}
       propertyPath: scoreToWin
-      value: 500
+      value: 400
       objectReference: {fileID: 0}
     - target: {fileID: 6166007977396806821, guid: 149abd19ac8b3cd4e9490d06153fe1f1, type: 3}
       propertyPath: m_IsActive
