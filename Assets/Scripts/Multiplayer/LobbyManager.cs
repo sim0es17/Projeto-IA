@@ -2,7 +2,7 @@ using UnityEngine;
 using Photon.Pun;
 using Photon.Realtime;
 using ExitGames.Client.Photon;
-using UnityEngine.UI; // Necessário para o Button
+using UnityEngine.UI; // ESSENCIAL para o tipo Button
 using Hashtable = ExitGames.Client.Photon.Hashtable;
 using TMPro;
 
@@ -19,7 +19,7 @@ public class LobbyManager : MonoBehaviourPunCallbacks
     // --- Singleton Pattern ---
     public static LobbyManager instance;
 
-    // --- NOVO FLAG PARA CONTROLE DE MOVIMENTO ---
+    // --- NOVO FLAG PARA CONTROLE DE MOVIMENTO (USADO PELO GameChat.cs) ---
     public static bool GameStartedAndPlayerCanMove = false;
 
     // --- Configurações de Tempo ---
@@ -30,16 +30,16 @@ public class LobbyManager : MonoBehaviourPunCallbacks
     // --- Variáveis de Sincronização e Estado ---
     private bool isCountingDown = false;
     private double startTime;             // O tempo real do Photon em que a contagem começou
-    private float countdownDuration;      // Duração total da contagem regressiva (90s ou 5s)
-    private float remainingTime;          // Tempo restante no countdown
+    private float countdownDuration;       // Duração total da contagem regressiva (90s ou 5s)
+    private float remainingTime;           // Tempo restante no countdown
 
     // --- Referências UI (Anexar no Inspector) ---
     [Header("UI Elements")]
     public GameObject lobbyPanel;         // O painel que contém toda a UI do lobby (ativar/desativar)
-    public TMPro.TextMeshProUGUI countdownText;      // Texto para mostrar o tempo restante
-    public TMPro.TextMeshProUGUI playerListText;     // Texto para mostrar a lista de jogadores
+    public TMPro.TextMeshProUGUI countdownText;       // Texto para mostrar o tempo restante
+    public TMPro.TextMeshProUGUI playerListText;      // Texto para mostrar a lista de jogadores
 
-    // --- NOVO: Botão para forçar o início (Arraste o botão aqui no Inspector) ---
+    // --- Botão para forçar o início ---
     public Button startGameButton;
 
     private void Awake()
@@ -55,7 +55,7 @@ public class LobbyManager : MonoBehaviourPunCallbacks
         // Garante que o movimento esteja desativado por padrão ao carregar a cena
         GameStartedAndPlayerCanMove = false;
 
-        // --- NOVO: Configurar o botão automaticamente se ele estiver assinado ---
+        // Configurar o botão automaticamente
         if (startGameButton != null)
         {
             startGameButton.onClick.AddListener(OnForceStartGame);
@@ -89,7 +89,7 @@ public class LobbyManager : MonoBehaviourPunCallbacks
     // --- UPDATE LOOP (Lógica de Contagem) ---
     void Update()
     {
-        // CORREÇÃO DE ERRO: Garante que o painel de UI não foi destruído
+        // Garante que o painel de UI não foi destruído
         if (lobbyPanel == null) return;
 
         // Só executa a lógica de contagem se estiver na sala e o timer estiver ativo
@@ -101,16 +101,14 @@ public class LobbyManager : MonoBehaviourPunCallbacks
         }
 
         // Lógica de contagem regressiva (compartilhada por todos os clientes)
-        // Usa o tempo sincronizado do Photon
         double elapsed = PhotonNetwork.Time - startTime;
 
-        // --- CORREÇÃO APLICADA (Linha 101) ---
-        // Usamos System.Math.Max porque 'elapsed' é double e Mathf é para float
+        // Garante que o tempo decorrido não é negativo
         elapsed = System.Math.Max(0.0, elapsed); 
         
         remainingTime = Mathf.Max(0f, countdownDuration - (float)elapsed);
 
-        Debug.Log($"Contagem regressiva: {remainingTime}s restantes.");
+        // Debug.Log($"Contagem regressiva: {remainingTime}s restantes."); // Remover debug em produção
 
         // Atualiza a UI para todos os clientes
         UpdateCountdownUI(remainingTime);
@@ -196,9 +194,8 @@ public class LobbyManager : MonoBehaviourPunCallbacks
 
                 isCountingDown = true;
                 
-                // --- CORREÇÃO APLICADA (Linha 188) ---
                 double elapsed = PhotonNetwork.Time - startTime;
-                elapsed = System.Math.Max(0.0, elapsed); // Usamos System.Math para doubles
+                elapsed = System.Math.Max(0.0, elapsed); 
 
                 remainingTime = Mathf.Max(0f, countdownDuration - (float)elapsed);
 
@@ -310,7 +307,7 @@ public class LobbyManager : MonoBehaviourPunCallbacks
         }
     }
 
-    // --- NOVO: AÇÃO DO BOTÃO "COMEÇAR AGORA" ---
+    // --- AÇÃO DO BOTÃO "COMEÇAR AGORA" ---
     public void OnForceStartGame()
     {
         // Verifica se é o Host (apenas por segurança, o botão já deve estar oculto para outros)
@@ -344,7 +341,8 @@ public class LobbyManager : MonoBehaviourPunCallbacks
 
         Debug.Log("Partida Iniciada! Removendo UI do Lobby e spawnando jogadores.");
 
-        GameStartedAndPlayerCanMove = true;
+        // *** AQUI ESTÁ A CHAVE PARA O CHAT E MOVIMENTO ***
+        GameStartedAndPlayerCanMove = true; 
 
         // 1. Desativa a tela de espera
         if (lobbyPanel != null)
@@ -352,7 +350,8 @@ public class LobbyManager : MonoBehaviourPunCallbacks
             lobbyPanel.SetActive(false);
         }
 
-        // 2. Desativa a câmera do Lobby AGORA que o jogador vai dar spawn
+        // 2. Desativa a câmera do Lobby para que a câmera do Player assuma
+        // ESSENCIAL: Se a câmara do Lobby ficar ativa, o jogador não verá o boneco nem o chat corretamente.
         if (RoomManager.instance != null && RoomManager.instance.roomCam != null)
         {
             RoomManager.instance.roomCam.SetActive(false);
@@ -384,7 +383,7 @@ public class LobbyManager : MonoBehaviourPunCallbacks
     {
         if (!PhotonNetwork.InRoom) return;
 
-        // CORREÇÃO DE ERRO: Garante que a referência playerListText existe
+        // Garante que a referência playerListText existe
         if (playerListText == null) return;
 
         // 1. Atualiza a lista de jogadores
@@ -396,10 +395,7 @@ public class LobbyManager : MonoBehaviourPunCallbacks
         }
         playerListText.text = players;
 
-        // --- NOVO: Controla a visibilidade do botão ---
-        // O botão só aparece se:
-        // 1. A variável estiver assinada no Inspector
-        // 2. O jogador local for o Master Client (Host)
+        // Controla a visibilidade do botão de forçar início
         if (startGameButton != null)
         {
             startGameButton.gameObject.SetActive(PhotonNetwork.IsMasterClient);
@@ -409,10 +405,9 @@ public class LobbyManager : MonoBehaviourPunCallbacks
     // Atualiza o texto do timer
     private void UpdateCountdownUI(float time)
     {
-        // CORREÇÃO DE ERRO: Garante que a referência countdownText existe
+        // Garante que a referência countdownText existe
         if (countdownText == null) return;
 
-        // Se a contagem parou ou o jogo começou, mostra uma mensagem estática
         // Verificar se o jogo já começou antes de exibir mensagens de espera
         bool gameAlreadyStarted = false;
         if (PhotonNetwork.CurrentRoom != null && PhotonNetwork.CurrentRoom.CustomProperties.ContainsKey(CustomRoomProperties.GameStarted))
@@ -422,7 +417,7 @@ public class LobbyManager : MonoBehaviourPunCallbacks
 
         if (gameAlreadyStarted)
         {
-            // Se o jogo já começou, o UI do lobby não deve estar ativo, mas por segurança, limpa o texto.
+            // Limpa o texto do contador se o jogo já estiver a decorrer
             countdownText.text = ""; 
             return;
         }

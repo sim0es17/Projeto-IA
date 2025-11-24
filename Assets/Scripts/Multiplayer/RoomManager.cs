@@ -6,32 +6,33 @@ using UnityEngine.SceneManagement;
 
 public class RoomManager : MonoBehaviourPunCallbacks
 {
+    // --- Singleton Pattern ---
     public static RoomManager instance;
 
+    // --- Configurações de Jogo ---
     // O jogador tem o SPAWN INICIAL + MAX_RESPAWNS (total de chances = MAX_RESPAWNS + 1)
-    private const int MAX_RESPAWNS = 2; // Significa 1 spawn inicial + 2 respawns = 3 vidas/chances
+    private const int MAX_RESPAWNS = 2; // 1 spawn inicial + 2 respawns = 3 vidas totais
+    private const string RESPAWN_COUNT_KEY = "RespawnCount"; // Chave para sincronização de rede
 
-    // Chave da Propriedade Personalizada para rastrear respawns restantes
-    private const string RESPAWN_COUNT_KEY = "RespawnCount";
-
-    // Variável para guardar o nome da cena a carregar após sair da sala
+    // Variável interna para transição de cenas
     private string sceneToLoadOnLeave = "";
 
     [Header("Player and Spawn")]
-    public GameObject player;
-    // O array de pontos de spawn: cada índice corresponde a um jogador (PlayerList[i])
-    public Transform[] spawnPoints; 
+    public GameObject player; // O Prefab do jogador (deve estar na pasta Resources)
+    public Transform[] spawnPoints; // Array com posições de spawn no mapa
 
     [Header("UI References")]
-    public GameObject roomCam; // A câmara usada no lobby/espera
-    public GameObject nameUI; // UI para inserir o nome/menu principal
+    public GameObject roomCam;     // A câmara usada no lobby/espera (desativada ao começar)
+    public GameObject nameUI;      // UI para inserir o nome (Menu Principal)
     public GameObject connectigUI; // UI de 'A Conectar...'
 
-    // Propriedade para verificar se o painel de nome está ativo (usado pelo PauseMenuController)
-    public bool IsNamePanelActive => nameUI != null && nameUI.activeSelf;
-
+    [Header("Room Info")]
+    public string mapName = "Noname"; 
     private string nickName = "Nameless";
-    public string mapName = "Noname"; // Nome do mapa para exibir no lobby/propriedades da sala
+
+    // --- Propriedade pública usada pelo GameChat.cs ---
+    // Retorna true se o menu de inserir nome estiver visível (bloqueia o chat)
+    public bool IsNamePanelActive => nameUI != null && nameUI.activeSelf;
 
     void Awake()
     {
@@ -42,7 +43,7 @@ public class RoomManager : MonoBehaviourPunCallbacks
             return;
         }
         instance = this;
-        // Mantém o objeto vivo entre cenas
+        // Mantém o objeto vivo entre cenas (Menu -> Jogo)
         DontDestroyOnLoad(this.gameObject);
     }
 
@@ -61,7 +62,7 @@ public class RoomManager : MonoBehaviourPunCallbacks
             PhotonNetwork.ConnectUsingSettings();
             Debug.Log("Tentando conectar ao Photon Master Server...");
 
-            // Certifique-se que as UIs existem antes de manipulá-las
+            // UI Feedback
             if (nameUI != null) nameUI.SetActive(false);
             if (connectigUI != null) connectigUI.SetActive(true);
         }
@@ -72,85 +73,75 @@ public class RoomManager : MonoBehaviourPunCallbacks
         }
     }
 
-    // Chamado ao pressionar o botão de Juntar Sala
+    // Chamado pelo botão "Join Room" na UI
     public void JoinRoomButtonPressed()
     {
-        // Se já estiver conectado ao Master, pode prosseguir
         if (PhotonNetwork.IsConnectedAndReady)
         {
             JoinRoomLogic();
         }
         else
         {
-            // Se não estiver, inicia a conexão.
             ConnectToMaster();
         }
     }
 
-    // Lógica para criar ou entrar numa sala
+    // Lógica interna para criar ou entrar
     private void JoinRoomLogic()
     {
         Debug.Log("Conexão estabelecida. Tentando entrar/criar sala...");
 
         RoomOptions ro = new RoomOptions();
+        ro.MaxPlayers = 4; // Limite de jogadores
 
-        // Limita a sala a 4 jogadores
-        ro.MaxPlayers = 4;
-
-        // Propriedades da sala para sincronização
+        // Propriedades da sala (sincroniza qual mapa está a ser jogado)
         ro.CustomRoomProperties = new Hashtable()
         {
             { "mapSceneIndex", SceneManager.GetActiveScene().buildIndex },
             { "mapName", mapName }
         };
 
-        // Propriedades visíveis no Lobby
         ro.CustomRoomPropertiesForLobby = new[]
         {
             "mapSceneIndex",
             "mapName"
         };
 
-        // Entra ou cria a sala com as opções definidas
-        PhotonNetwork.JoinOrCreateRoom(roomName: PlayerPrefs.GetString(key: "RoomNameToJoin"), ro, typedLobby: null);
+        // Entra ou cria a sala baseada no nome guardado ou padrão
+        PhotonNetwork.JoinOrCreateRoom(PlayerPrefs.GetString("RoomNameToJoin", "DefaultRoom"), ro, typedLobby: null);
     }
 
-    // --- FUNÇÃO PARA SAIR E IR PARA O MENU (LIGADA AO TEU BOTÃO) ---
+    // --- FUNÇÃO PARA SAIR (Retorna ao Menu) ---
 
-    /// <summary>
-    /// Função pública chamada pelo botão de pausa para sair da sala e ir para o menu.
-    /// </summary>
     public void LeaveGameAndGoToMenu(string menuSceneName)
     {
         Debug.Log("A sair do jogo e a voltar ao menu...");
 
-        // 1. Volta a pôr o tempo a 1, caso estivesse em pausa
+        // 1. Reset ao tempo (caso estivesse em pausa)
         Time.timeScale = 1f;
 
-        // 2. Guarda o nome da cena do menu para carregar mais tarde
+        // 2. Guarda a cena para carregar DEPOIS de desconectar da sala
         sceneToLoadOnLeave = menuSceneName;
 
-        // 3. Manda o Photon sair da sala (isto é assíncrono)
+        // 3. Photon Leave (Assíncrono -> vai chamar OnLeftRoom)
         if (PhotonNetwork.InRoom)
         {
             PhotonNetwork.LeaveRoom();
         }
         else
         {
-            // Fallback para caso não esteja numa sala, mas o jogo tenha começado
+            // Fallback se não estiver na sala
             SceneManager.LoadScene(menuSceneName);
             Destroy(this.gameObject);
         }
     }
-
 
     // --- CALLBACKS DO PHOTON ---
 
     public override void OnConnectedToMaster()
     {
         base.OnConnectedToMaster();
-        Debug.Log("Conectado ao Master Server! Lobby automático.");
-        // Tenta entrar na sala imediatamente após conectar
+        Debug.Log("Conectado ao Master Server! Tentando entrar em sala...");
         JoinRoomLogic();
     }
 
@@ -165,170 +156,122 @@ public class RoomManager : MonoBehaviourPunCallbacks
     public override void OnJoinedRoom()
     {
         base.OnJoinedRoom();
+        Debug.Log("Entrou na sala com sucesso!");
 
-        Debug.Log("Joined room!");
+        if (connectigUI != null) connectigUI.SetActive(false);
 
-        if (connectigUI != null) connectigUI.SetActive(false); // Esconde a tela de connecting
-
-        // **** CORREÇÃO CRUCIAL PARA INICIALIZAÇÃO DE RESPAWN ****
-        // Define a contagem inicial de respawns assim que o jogador entra na sala.
+        // Define as vidas iniciais assim que entra
         SetInitialRespawnCount(PhotonNetwork.LocalPlayer);
-        // ******************************************************
         
-        // 1. Chama o LobbyManager para iniciar a lógica de espera (UI do Lobby)
+        // Avisa o LobbyManager para mostrar a UI de espera
         if (LobbyManager.instance != null)
         {
-            // Assume que 'LobbyManager' existe e tem uma instância e o método 'OnRoomEntered'
             LobbyManager.instance.OnRoomEntered();
         }
     }
 
-    // Chamado após o jogador sair da sala (LeaveRoom())
     public override void OnLeftRoom()
     {
         base.OnLeftRoom();
-        Debug.Log("Saída da sala com sucesso (OnLeftRoom).");
+        Debug.Log("Saiu da sala (OnLeftRoom). Carregando Menu...");
 
-        // Agora que saímos da sala, verifica se tínhamos uma cena para carregar
+        // Carrega a cena do menu
         if (!string.IsNullOrEmpty(sceneToLoadOnLeave))
         {
-            // Carrega a cena do menu
             SceneManager.LoadScene(sceneToLoadOnLeave);
-
-            // Destrói o RoomManager para que não vá para a cena do menu
+            
+            // Destrói este Singleton para resetar o estado ao voltar ao menu
             if (instance == this)
             {
                 Destroy(this.gameObject);
             }
-            // Limpa a variável
             sceneToLoadOnLeave = "";
         }
     }
 
+    public override void OnPlayerLeftRoom(Player otherPlayer)
+    {
+        base.OnPlayerLeftRoom(otherPlayer);
+        Debug.Log($"{otherPlayer.NickName} saiu da sala.");
+        // A lista de players atualiza automaticamente
+    }
 
-    // --- LÓGICA DE RESPAWN E MORTE ---
+    // --- LÓGICA DE SPAWN E RESPAWN ---
 
     public void SetInitialRespawnCount(Player player)
     {
-        // Define o número inicial de respawns apenas se a propriedade não existir
+        // Só define se ainda não tiver a propriedade (para não resetar se reconectar)
         if (!player.CustomProperties.ContainsKey(RESPAWN_COUNT_KEY))
         {
             Hashtable props = new Hashtable();
-            // Define 2 respawns restantes (além do spawn inicial)
             props.Add(RESPAWN_COUNT_KEY, MAX_RESPAWNS);
             player.SetCustomProperties(props);
-            Debug.Log($"Jogador {player.NickName} inicializado com {MAX_RESPAWNS} respawns restantes.");
+            Debug.Log($"Respawns definidos para {player.NickName}: {MAX_RESPAWNS}");
         }
     }
 
+    // Função chamada pelo LobbyManager para criar o boneco
     public void RespawnPlayer()
     {
-        // Obtém a contagem de respawns restantes.
+        // Verifica vidas restantes
         int respawnsLeft = GetRespawnCount(PhotonNetwork.LocalPlayer);
 
+        // Verificação de segurança dos pontos de spawn
         if (spawnPoints == null || spawnPoints.Length == 0)
         {
-            Debug.LogError("O Array 'spawnPoints' está vazio ou nulo! Não é possível dar Respawn.");
+            Debug.LogError("ERRO: Array 'spawnPoints' está vazio no RoomManager!");
             return;
         }
 
-        // O jogador pode ter respawn *se* tiver chances restantes (respawnsLeft >= 0)
-        // NOTA: Se o jogador tiver 0 respawns restantes, esta função NÃO deve ser chamada 
-        // ou a sua lógica deve ser revista. Assumindo que 0 respawns = 1 vida restante.
-        // O ponto de falha agora é o limite < 0.
+        // Se tiver vidas (ou spawn inicial)
         if (respawnsLeft >= 0 && player != null)
         {
-            // 1. Obtém a lista de jogadores na sala
-            Player[] players = PhotonNetwork.PlayerList;
-            
-            // 2. Encontra o índice do jogador local na lista
-            int playerIndex = -1;
-            for (int i = 0; i < players.Length; i++)
-            {
-                if (players[i] == PhotonNetwork.LocalPlayer)
-                {
-                    playerIndex = i;
-                    break;
-                }
-            }
+            // --- Lógica de seleção de Ponto de Spawn ---
+            // Tenta pegar um ponto baseado no ID do jogador para evitar sobreposição inicial
+            int playerIndex = GetPlayerIndex(PhotonNetwork.LocalPlayer);
+            int spawnIndex = playerIndex % spawnPoints.Length; // Garante que não sai do limite do array
 
-            // 3. Seleção do Ponto de Spawn
-            Transform spawnPoint;
-            int selectedSpawnIndex = playerIndex; // Começa pelo índice do jogador
+            Transform spawnPoint = spawnPoints[spawnIndex];
 
-            if (selectedSpawnIndex >= 0 && selectedSpawnIndex < spawnPoints.Length)
-            {
-                // Usa o ponto de spawn baseado no índice do jogador
-                spawnPoint = spawnPoints[selectedSpawnIndex];
-            }
-            else
-            {
-                // Fallback: Se o índice for inválido ou exceder o número de spawns, usa o primeiro (0)
-                selectedSpawnIndex = 0;
-                // Previne IndexOutOfRangeException caso spawnPoints esteja vazio, 
-                // embora o check inicial já o faça.
-                if (spawnPoints.Length > 0)
-                {
-                    spawnPoint = spawnPoints[0];
-                }
-                else
-                {
-                    // Se estiver vazio (o que o check inicial deveria ter apanhado)
-                    Debug.LogError("SpawnPoints está vazio no fallback. Abortando Respawn.");
-                    return; 
-                }
-                Debug.LogWarning($"Índice de jogador ({playerIndex}) inválido para Spawn. Usando SpawnPoint #0 como fallback.");
-            }
-
-            // 4. Instancia o player em rede
+            // Instancia o jogador na rede
             GameObject _player = PhotonNetwork.Instantiate(player.name, spawnPoint.position, Quaternion.identity);
 
-            // Configurações do jogador local
+            // Configurações locais
             _player.GetComponent<PlayerSetup>()?.IsLocalPlayer();
 
-            // Define e sincroniza o Nickname (necessário ter um RPC chamado "SetNickname" no PlayerSetup)
+            // Sincroniza o Nickname no boneco
             if (_player.GetComponent<PhotonView>() != null)
             {
                 _player.GetComponent<PhotonView>().RPC("SetNickname", RpcTarget.AllBuffered, nickName);
                 PhotonNetwork.LocalPlayer.NickName = nickName;
             }
 
-            Debug.Log($"Respawn realizado para {PhotonNetwork.LocalPlayer.NickName} no SpawnPoint #{selectedSpawnIndex}. Respawn(s) restante(s) antes da próxima morte: {respawnsLeft}");
+            Debug.Log($"Spawn realizado no ponto {spawnIndex}. Vidas restantes: {respawnsLeft}");
         }
         else
         {
-            // O jogador atingiu o limite de respawns ou faltam referências
-            Debug.Log($"LIMITE DE RESPAWN ATINGIDO! Jogador {PhotonNetwork.LocalPlayer.NickName} não pode mais dar respawn.");
-            
-            // Lógica de Fim de Jogo (opcional): 
-            // Se quiser forçar o jogador a sair ou mostrar uma tela de game over.
+            Debug.Log("Game Over: Limite de respawns atingido.");
+            // Aqui podes chamar uma UI de espectador ou Game Over
         }
     }
 
-    // Chamado pelo script Health.cs (no MasterClient, para atualizar a contagem de respawn na rede)
+    // Chamado pelo Script de Vida quando alguém morre (Executado no MasterClient)
     public void OnPlayerDied(Player playerWhoDied)
     {
-        // APENAS o MasterClient deve manipular e sincronizar a contagem de respawns
         if (!PhotonNetwork.IsMasterClient) return;
 
         int currentRespawnCount = GetRespawnCount(playerWhoDied);
 
-        // Só decrementamos se o jogador tiver respawns restantes (currentRespawnCount > 0)
-        // NOTA: Se respawnCount for 0, o respawn será permitido, mas a contagem passará a -1, 
-        // bloqueando o próximo respawn.
         if (currentRespawnCount > 0)
         {
-            // Decrementa a contagem de respawns
             currentRespawnCount--;
-
-            Hashtable props = new Hashtable();
-            props.Add(RESPAWN_COUNT_KEY, currentRespawnCount);
+            Hashtable props = new Hashtable { { RESPAWN_COUNT_KEY, currentRespawnCount } };
             playerWhoDied.SetCustomProperties(props);
-
-            Debug.Log($"[MasterClient] Jogador {playerWhoDied.NickName} morreu. Restam {currentRespawnCount} respawn(s).");
+            Debug.Log($"[Server] {playerWhoDied.NickName} morreu. Restam: {currentRespawnCount}");
         }
-        // Se currentRespawnCount for 0 ou menor, a contagem não é alterada (e o respawn falhará na próxima vez).
     }
+
+    // --- UTILITÁRIOS ---
 
     private int GetRespawnCount(Player player)
     {
@@ -336,14 +279,16 @@ public class RoomManager : MonoBehaviourPunCallbacks
         {
             return (int)count;
         }
-        // Se a propriedade ainda não foi definida, retorna o valor máximo (permite o spawn inicial)
         return MAX_RESPAWNS;
     }
 
-    public override void OnPlayerLeftRoom(Player otherPlayer)
+    private int GetPlayerIndex(Player player)
     {
-        base.OnPlayerLeftRoom(otherPlayer);
-        Debug.LogFormat("OnPlayerLeftRoom() {0}", otherPlayer.NickName);
-        // Nota: A lista PhotonNetwork.PlayerList é reordenada automaticamente após um jogador sair.
+        Player[] players = PhotonNetwork.PlayerList;
+        for (int i = 0; i < players.Length; i++)
+        {
+            if (players[i] == player) return i;
+        }
+        return 0;
     }
 }
