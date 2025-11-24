@@ -2812,6 +2812,75 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_Padding: {x: -8, y: -5, z: -8, w: -5}
   m_Softness: {x: 0, y: 0}
+--- !u!1 &1022977145
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1022977148}
+  - component: {fileID: 1022977147}
+  - component: {fileID: 1022977146}
+  m_Layer: 0
+  m_Name: ChatManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1022977146
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1022977145}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: aa584fbee541324448dd18d8409c7a41, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  ObservedComponentsFoldoutOpen: 1
+  Group: 0
+  prefixField: -1
+  Synchronization: 3
+  OwnershipTransfer: 0
+  observableSearch: 2
+  ObservedComponents: []
+  sceneViewId: 1
+  InstantiationId: 0
+  isRuntimeInstantiated: 0
+--- !u!114 &1022977147
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1022977145}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 19cae000f9f47b0498b7dbff3ca0ba4d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  chatText: {fileID: 1252746759}
+  inputField: {fileID: 1252746758}
+--- !u!4 &1022977148
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1022977145}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 471.70425, y: 293.7932, z: 1.8111618}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1037247006
 GameObject:
   m_ObjectHideFlags: 0
@@ -3707,17 +3776,45 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4414858705285102287, guid: b26bdf7ae8fdc1d4a88f45b2e406ace3, type: 3}
       propertyPath: m_Name
-      value: ChatManager
+      value: Chat
       objectReference: {fileID: 0}
     - target: {fileID: 6988018275069845211, guid: b26bdf7ae8fdc1d4a88f45b2e406ace3, type: 3}
       propertyPath: sceneViewId
       value: 1
       objectReference: {fileID: 0}
-    m_RemovedComponents: []
+    - target: {fileID: 8059224280940984959, guid: b26bdf7ae8fdc1d4a88f45b2e406ace3, type: 3}
+      propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
+    m_RemovedComponents:
+    - {fileID: 2234637909885477413, guid: b26bdf7ae8fdc1d4a88f45b2e406ace3, type: 3}
+    - {fileID: 6988018275069845211, guid: b26bdf7ae8fdc1d4a88f45b2e406ace3, type: 3}
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: b26bdf7ae8fdc1d4a88f45b2e406ace3, type: 3}
+--- !u!114 &1252746758 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 1363828234997203889, guid: b26bdf7ae8fdc1d4a88f45b2e406ace3, type: 3}
+  m_PrefabInstance: {fileID: 1252746757}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2da0c512f12947e489f739169773d7ca, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+--- !u!114 &1252746759 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 2687509579939988699, guid: b26bdf7ae8fdc1d4a88f45b2e406ace3, type: 3}
+  m_PrefabInstance: {fileID: 1252746757}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f4688fdb7df04437aeb418b961361dc5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &1266325332
 GameObject:
   m_ObjectHideFlags: 0
@@ -7312,3 +7409,4 @@ SceneRoots:
   - {fileID: 12250350}
   - {fileID: 1519927154}
   - {fileID: 512476206}
+  - {fileID: 1022977148}
