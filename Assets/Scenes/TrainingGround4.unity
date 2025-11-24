@@ -130,7 +130,7 @@ GameObject:
   - component: {fileID: 57445973}
   - component: {fileID: 57445972}
   - component: {fileID: 57445974}
-  m_Layer: 0
+  m_Layer: 3
   m_Name: Cave - Floor_11
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -865,7 +865,7 @@ GameObject:
   - component: {fileID: 435323865}
   - component: {fileID: 435323864}
   - component: {fileID: 435323866}
-  m_Layer: 0
+  m_Layer: 3
   m_Name: Cave - Platforms_2
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1238,7 +1238,7 @@ GameObject:
   - component: {fileID: 471242241}
   - component: {fileID: 471242240}
   - component: {fileID: 471242242}
-  m_Layer: 0
+  m_Layer: 3
   m_Name: Cave - Floor_2 (1)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1619,7 +1619,7 @@ GameObject:
   - component: {fileID: 797332908}
   - component: {fileID: 797332907}
   - component: {fileID: 797332909}
-  m_Layer: 0
+  m_Layer: 3
   m_Name: Cave - BigRocks1_0 (1)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1944,7 +1944,7 @@ GameObject:
   - component: {fileID: 828588395}
   - component: {fileID: 828588394}
   - component: {fileID: 828588396}
-  m_Layer: 0
+  m_Layer: 3
   m_Name: Cave - Platforms_3
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -2982,7 +2982,7 @@ GameObject:
   - component: {fileID: 1322465241}
   - component: {fileID: 1322465240}
   - component: {fileID: 1322465242}
-  m_Layer: 0
+  m_Layer: 3
   m_Name: Cave - BigRocks1_0
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -3253,9 +3253,9 @@ MonoBehaviour:
   introStartSize: 20
   normalSize: 6
   edgeSize: 9
-  leftTriggerX: -15
-  rightTriggerX: 15
-  cameraMinY: -10
+  leftTriggerX: -54
+  rightTriggerX: 26
+  cameraMinY: -22
   bottomLimitY: -25
   topLimitY: 30
 --- !u!1 &1403182411
@@ -3786,7 +3786,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 1701225311}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: d2964e9803734304ab0c468d7e58abc5, type: 3}
+  m_Script: {fileID: 11500000, guid: f2a8e52ba8b09d544836730528ed721a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
 --- !u!4 &1701225313
@@ -3815,7 +3815,7 @@ GameObject:
   - component: {fileID: 1725542380}
   - component: {fileID: 1725542379}
   - component: {fileID: 1725542381}
-  m_Layer: 0
+  m_Layer: 3
   m_Name: Cave - Floor_2
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -4311,9 +4311,9 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1914500540}
-  m_Layer: 0
+  m_Layer: 3
   m_Name: Arena
-  m_TagString: Untagged
+  m_TagString: Ground
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -4559,7 +4559,7 @@ GameObject:
   - component: {fileID: 2079297082}
   - component: {fileID: 2079297081}
   - component: {fileID: 2079297083}
-  m_Layer: 0
+  m_Layer: 3
   m_Name: Cave - Floor_2 (2)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -4704,7 +4704,7 @@ GameObject:
   - component: {fileID: 2088094800}
   - component: {fileID: 2088094799}
   - component: {fileID: 2088094801}
-  m_Layer: 0
+  m_Layer: 3
   m_Name: Cave - Platforms_12
   m_TagString: Untagged
   m_Icon: {fileID: 0}
