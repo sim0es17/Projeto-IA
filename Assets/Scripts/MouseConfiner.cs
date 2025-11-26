@@ -4,41 +4,13 @@ public class MouseConfiner : MonoBehaviour
 {
     void Start()
     {
-        // ComeÁa o jogo com o cursor confinado. 
-        // Se estiver num menu inicial, pode mudar para LockCursorImmediate() se quiser o cursor logo visÌvel.
-        LockCursor();
-    }
-
-    void Update()
-    {
-        // Se o utilizador clicar na janela (bot„o esquerdo)
-        // E o cursor estiver atualmente livre (estado CursorLockMode.None),
-        // confina-o novamente.
-        // Isto È crucial para voltar ao jogo depois de sair da pausa (ESC).
-        if (Input.GetMouseButtonDown(0) && Cursor.lockState == CursorLockMode.None)
-        {
-            // Verifica se o jogo est· em execuÁ„o (n„o pausado), se for o caso
-            // if (Time.timeScale > 0f) 
-            // {
-            LockCursor();
-            // }
-        }
-    }
-
-    /// <summary>
-    /// FunÁ„o para prender o cursor
-    /// </summary>
-    void LockCursor()
-    {
-        // Confina o cursor ‡ janela do jogo
+        // Garante que o cursor est√° confinado √† janela do jogo.
+        // O cursor permanece vis√≠vel (Cursor.visible = true; √© o padr√£o, mas explicitamos por clareza).
         Cursor.lockState = CursorLockMode.Confined;
+        
+        // Mant√©m o cursor vis√≠vel.
+        Cursor.visible = true; 
 
-        // Garante que o cursor permanece visÌvel,
-        // mas È controlado pelo MouseConfiner
-        Cursor.visible = true;
+        // O Update() foi removido, pois toda a l√≥gica de pausa (libertar/confinar) √© gerida pelo PMMM.
     }
-
-    // NOTA IMPORTANTE: A lÛgica de libertar o cursor ao premir ESC
-    // FOI REMOVIDA DAQUI. 
-    // AGORA DEVE ESTAR EM PauseMenuController.PauseGame()
 }

@@ -4,8 +4,8 @@ using Photon.Pun.UtilityScripts;
 using System.Collections;
 using ExitGames.Client.Photon;
 using System.Collections.Generic;
-using UnityEngine.UI;              // NOVO: Necess·rio para a classe Image
-using TMPro;                       // NOVO: Necess·rio para TextMeshProUGUI
+using UnityEngine.UI; // Necess√°rio para a classe Image
+using TMPro; // Necess√°rio para TextMeshProUGUI
 
 [RequireComponent(typeof(PhotonView))]
 public class CombatSystem2D : MonoBehaviourPunCallbacks
@@ -26,7 +26,7 @@ public class CombatSystem2D : MonoBehaviourPunCallbacks
 
     // NOVO: Elementos de UI
     [Header("UI Defesa")]
-    public Image defenseIcon;            // Õcone do shield (para alterar a transparÍncia)
+    public Image defenseIcon; // √çcone do shield (para alterar a transpar√™ncia)
     public TextMeshProUGUI defenseText; // Texto com o tempo restante
 
     private float nextAttackTime = 0f;
@@ -37,7 +37,7 @@ public class CombatSystem2D : MonoBehaviourPunCallbacks
     void Awake()
     {
         photonView = GetComponent<PhotonView>();
-        // Este script sÛ deve rodar no jogador local para gerir os inputs e UI
+        // Este script s√≥ deve rodar no jogador local para gerir os inputs e UI
         enabled = false;
     }
 
@@ -45,7 +45,7 @@ public class CombatSystem2D : MonoBehaviourPunCallbacks
     {
         anim = GetComponent<Animator>();
 
-        // NOVO: Tentar encontrar UI automaticamente (˙til para prÈ-fabs)
+        // NOVO: Tentar encontrar UI automaticamente (√∫til para pr√©-fabs)
         if (defenseIcon == null || defenseText == null)
         {
             Canvas canvas = GetComponentInChildren<Canvas>();
@@ -62,14 +62,29 @@ public class CombatSystem2D : MonoBehaviourPunCallbacks
 
     void Update()
     {
-        // LÛgica de Ataque (Input lido apenas no jogador local)
+        // NOVO: VERIFICA√á√ÉO DE PAUSA
+        // Bloqueia todo o input de combate se o menu de pausa estiver ativo.
+        if (PMMM.IsPausedLocally)
+        {
+            // Se estivermos a defender e pausarmos, devemos for√ßar o fim da defesa.
+            // Isto garante que o jogador n√£o fica permanentemente defendendo se pausar e sair.
+            if (isDefending)
+            {
+                photonView.RPC(nameof(SetDefenseState), RpcTarget.All, false);
+                // N√£o colocamos o cooldown aqui, pois o Update n√£o vai correr de novo
+                // at√© que o jogo seja retomado, e a l√≥gica de cooldown deve ser aplicada no ResumeGame() ou OnMouseUp.
+            }
+            return; // IGNORA TODO O RESTO DA L√ìGICA DE INPUT
+        }
+
+        // L√≥gica de Ataque (Input lido apenas no jogador local)
         if (Input.GetMouseButtonDown(0) && Time.time >= nextAttackTime && !isDefending)
         {
             nextAttackTime = Time.time + attackCooldown;
             photonView.RPC(nameof(Attack), RpcTarget.All);
         }
 
-        // --- L”GICA DE DEFESA ---
+        // --- L√ìGICA DE DEFESA ---
         if (Input.GetMouseButtonDown(1) && Time.time >= nextDefenseTime && !isDefending)
         {
             photonView.RPC(nameof(SetDefenseState), RpcTarget.All, true);
@@ -85,20 +100,20 @@ public class CombatSystem2D : MonoBehaviourPunCallbacks
         UpdateDefenseUI();
     }
 
-    // NOVO: ImplementaÁ„o do mÈtodo de UI
+    // NOVO: Implementa√ß√£o do m√©todo de UI
     private void UpdateDefenseUI()
     {
-        // SÛ precisa de processar a UI se for o jogador local
+        // S√≥ precisa de processar a UI se for o jogador local
         if (!photonView.IsMine) return;
 
         if (defenseIcon == null && defenseText == null) return;
 
         float remaining = nextDefenseTime - Time.time;
 
-        // Est· em cooldown (apÛs largar a defesa)
+        // Est√° em cooldown (ap√≥s largar a defesa)
         if (remaining > 0f && !isDefending)
         {
-            // Diminui a opacidade do Ìcone para indicar "bloqueado"
+            // Diminui a opacidade do √≠cone para indicar "bloqueado"
             if (defenseIcon != null)
             {
                 var c = defenseIcon.color;
@@ -123,7 +138,7 @@ public class CombatSystem2D : MonoBehaviourPunCallbacks
                 defenseIcon.color = c;
             }
 
-            // Remove o n˙mero
+            // Remove o n√∫mero
             if (defenseText != null)
                 defenseText.text = "";
         }
@@ -135,7 +150,7 @@ public class CombatSystem2D : MonoBehaviourPunCallbacks
     {
         if (anim) anim.SetTrigger("Attack");
 
-        // L”GICA AUTORIT¡RIA
+        // L√ìGICA AUTORIT√ÅRIA
         if (photonView.IsMine)
         {
             // Instanciar VFX
@@ -145,7 +160,7 @@ public class CombatSystem2D : MonoBehaviourPunCallbacks
                 StartCoroutine(DestroyVFX(vfx, 1f));
             }
 
-            // DeteÁ„o e C·lculo de dano
+            // Dete√ß√£o e C√°lculo de dano
             Collider2D[] hitEnemies = Physics2D.OverlapCircleAll(attackPoint.position, attackRange, enemyLayers);
             foreach (Collider2D enemy in hitEnemies)
             {
@@ -215,7 +230,7 @@ public class CombatSystem2D : MonoBehaviourPunCallbacks
         if (state)
         {
             if (anim) anim.SetBool("IsDefending", true);
-            Debug.Log($"{gameObject.name} est· defendendo!");
+            Debug.Log($"{gameObject.name} est√° defendendo!");
         }
         else
         {
