@@ -209,15 +209,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 901226c15bab7804485b229e432e463f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  walkSpeed: 4
-  sprintSpeed: 8
+  moveSpeed: 5
   jumpForce: 5
-  maxJumps: 2
   groundCheck: {fileID: 6785350556649017207}
-  groundCheckRadius: 0.1
   groundLayer:
     serializedVersion: 2
     m_Bits: 8
+  groundCheckRadius: 0.1
   isKnockedBack: 0
 --- !u!114 &3548697139772030856
 MonoBehaviour:
@@ -240,6 +238,8 @@ MonoBehaviour:
     m_Bits: 192
   defenseCooldown: 0.2
   isDefending: 0
+  pvpKnockbackForce: 5
+  pvpKnockbackDuration: 0.2
   hitVFX: {fileID: 9081207694187098227, guid: a14c85ec1b7dde140924e194f58c2f0b, type: 3}
   defenseIcon: {fileID: 0}
   defenseText: {fileID: 0}
@@ -736,7 +736,7 @@ Transform:
   m_GameObject: {fileID: 2480449986994863222}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0.0201, y: -0.069, z: 0}
+  m_LocalPosition: {x: 0, y: -0.161, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
