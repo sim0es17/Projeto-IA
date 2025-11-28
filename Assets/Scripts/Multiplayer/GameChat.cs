@@ -95,36 +95,42 @@ public class GameChat : MonoBehaviour, IOnEventCallback
         // LÓGICA DE BLOQUEIO GERAL
         // ------------------------------------
         
-        // Bloqueio Total: Se o jogo não começou OU estivermos em pausa/menu de nome, bloqueia.
-        if (!LobbyManager.GameStartedAndPlayerCanMove || 
-            (roomManager != null && roomManager.IsNamePanelActive) ||
-            (pauseManager != null && PMMM.IsPausedLocally)) 
+        // Condições que SEMPRE bloqueiam o chat: Menu de Pausa ou Painel de Nome.
+        bool isBlockedByUI = (roomManager != null && roomManager.IsNamePanelActive) ||
+            (pauseManager != null && PMMM.IsPausedLocally); 
+        if (isBlockedByUI)
         {
-             // Se estiver aberto, fecha imediatamente e bloqueia todo o input.
-             if (isInputFieldToggled) ForceCloseChat();
-             return; 
+            Debug.LogWarning("[GameChat] Bloqueado pela UI (Painel de Nome ou Pausa).");
+            if (isInputFieldToggled) ForceCloseChat();
+            return;
         }
 
-        // Se o chat JÁ ESTIVER aberto, não processa o input de abertura.
+        // Se não estivermos no lobby E o jogo ainda não começou, bloqueia.
+        if (!PhotonNetwork.InLobby && !LobbyManager.GameStartedAndPlayerCanMove)
+        {
+            Debug.LogWarning("[GameChat] Bloqueado: Não está no lobby e o jogo não começou.");
+            return;
+        }
+
+        // ------------------------------------
+        // LÓGICA DE ABRIR/FECHAR O CHAT
+        // ------------------------------------
+
+        // Se o chat está aberto, a única tecla que nos interessa é ESCAPE para fechar.
         if (isInputFieldToggled)
         {
-            // Apenas processamos ESCAPE para fechar
             if (Input.GetKeyDown(KeyCode.Escape))
             {
                 ForceCloseChat();
             }
-            return;
         }
-        
-        // ------------------------------------
-        // LÓGICA DE ABRIR O CHAT
-        // ------------------------------------
-
-        // Abrir com a tecla T (ou outra)
-        if (Input.GetKeyDown(KeyCode.T))
+        // Se o chat está fechado, a única tecla que nos interessa é 'T' para abrir.
+        else 
         {
-            Debug.Log("DEBUG CHAT: Tecla T Pressionada. A tentar abrir chat.");
-            OpenChatInput();
+            if (Input.GetKeyDown(KeyCode.T)) {
+                Debug.Log("[GameChat] Tecla 'T' pressionada. Abrindo o chat...");
+                OpenChatInput();
+            }
         }
     }
 
