@@ -1,164 +1,5 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
---- !u!1 &802514016311977584
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 3255658328736133897}
-  - component: {fileID: 1732463357188629452}
-  m_Layer: 0
-  m_Name: SpeedPowerupSpawner
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &3255658328736133897
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 802514016311977584}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 3036564304406106605}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &1732463357188629452
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 802514016311977584}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 64ea9524f99c84d47a42543764632dea, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  powerupPrefab: {fileID: 8816147604158316405, guid: c136272ff79c652408234247a49fb2d9, type: 3}
-  arenaBounds: {fileID: 3119757727159315871}
-  groundMask:
-    serializedVersion: 2
-    m_Bits: 8
-  tempoNoMapa: 15
-  tempoEntreSpawns: 20
-  offsetY: 0.5
-  maxTentativas: 20
---- !u!1 &897245796190294554
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 7122072062122892115}
-  - component: {fileID: 5634400220288221371}
-  m_Layer: 0
-  m_Name: SmartPowerupSpawner
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &7122072062122892115
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 897245796190294554}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: -2.2197561, y: 1.9570808, z: 0.18792725}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 3036564304406106605}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &5634400220288221371
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 897245796190294554}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 64ea9524f99c84d47a42543764632dea, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  powerupPrefab: {fileID: 1610415546218676398, guid: e2404e2810322204caa24f276d805635, type: 3}
-  arenaBounds: {fileID: 3119757727159315871}
-  groundMask:
-    serializedVersion: 2
-    m_Bits: 8
-  tempoNoMapa: 15
-  tempoEntreSpawns: 20
-  offsetY: 0.5
-  maxTentativas: 20
---- !u!1 &1984364802486092554
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 4835799374877907072}
-  - component: {fileID: 6660835959319458580}
-  m_Layer: 0
-  m_Name: HealthPowerupSpawner
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &4835799374877907072
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1984364802486092554}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: -2.2197561, y: 1.9570808, z: 0.18792725}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 3036564304406106605}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &6660835959319458580
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1984364802486092554}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 64ea9524f99c84d47a42543764632dea, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  powerupPrefab: {fileID: 5102893418727819705, guid: 85aa977c57a640a4daa7ffc638a48f58, type: 3}
-  arenaBounds: {fileID: 3119757727159315871}
-  groundMask:
-    serializedVersion: 2
-    m_Bits: 8
-  tempoNoMapa: 15
-  tempoEntreSpawns: 20
-  offsetY: 0.5
-  maxTentativas: 20
 --- !u!1 &3503474326470348432
 GameObject:
   m_ObjectHideFlags: 0
@@ -189,9 +30,7 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 9158518395961110338}
-  - {fileID: 4835799374877907072}
-  - {fileID: 7122072062122892115}
-  - {fileID: 3255658328736133897}
+  - {fileID: 2615087470488109328}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &4297451526389946190
@@ -272,3 +111,59 @@ BoxCollider2D:
   m_AutoTiling: 0
   m_Size: {x: 43.29943, y: 13.456403}
   m_EdgeRadius: 0
+--- !u!1 &7991384682337141448
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2615087470488109328}
+  - component: {fileID: 1711946872066272838}
+  m_Layer: 0
+  m_Name: PowerUp Spawner
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &2615087470488109328
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7991384682337141448}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 3036564304406106605}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1711946872066272838
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7991384682337141448}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 64ea9524f99c84d47a42543764632dea, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  powerupPrefabs:
+  - {fileID: 5102893418727819705, guid: 85aa977c57a640a4daa7ffc638a48f58, type: 3}
+  - {fileID: 8816147604158316405, guid: c136272ff79c652408234247a49fb2d9, type: 3}
+  - {fileID: 1610415546218676398, guid: e2404e2810322204caa24f276d805635, type: 3}
+  arenaBounds: {fileID: 3119757727159315871}
+  groundMask:
+    serializedVersion: 2
+    m_Bits: 8
+  tempoNoMapa: 15
+  tempoEntreSpawns: 20
+  offsetY: 0.5
+  maxTentativas: 20

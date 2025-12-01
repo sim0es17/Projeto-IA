@@ -3,23 +3,34 @@ using System.Collections;
 
 public class SmartPowerUp : MonoBehaviour
 {
+    // --- ENUM e Configuração ---
     public enum EffectType
     {
         Heal,
-        DamageBoost
+        DamageBoost,
+        SpeedBoost
     }
+
+    [Header("Referencias do Spawner")]
+    [HideInInspector]
+    public MultiPowerupSpawner spawner; // Referência para notificar o spawner (CORRIGE CS1061)
 
     [Header("Decisao")]
     [Range(0f, 1f)]
-    public float lowHealthThreshold = 0.3f;   // 30% de vida para decidir cura
+    public float lowHealthThreshold = 0.3f; // 30% de vida para decidir cura
+    public float enemyCheckRadius = 5f; // Raio para verificar inimigos (Dano vs Velocidade)
 
-    [Header("Efeitos")]
-    public float effectDuration = 15f;        // Dura��o do buff de dano
-    public float damageMultiplier = 1.5f;     // +50% de dano
+    [Header("Efeitos - Dano")]
+    public float damageDuration = 15f;
+    public float damageMultiplier = 1.5f;
 
+    [Header("Efeitos - Velocidade")]
+    public float speedDuration = 15f;
+    public float speedMultiplier = 1.5f;
+    public float jumpMultiplier = 1.3f;
+
+    // --- VARIÁVEIS INTERNAS ---
     private bool consumed = false;
-
-    // Para esconder o power up ao ser apanhado
     private Collider2D col;
     private SpriteRenderer sr;
 
@@ -33,75 +44,107 @@ public class SmartPowerUp : MonoBehaviour
     {
         if (consumed) return;
 
-        if (!collision.CompareTag("Player"))
-            return;
-
-        // Health � obrigat�rio
+        // Tenta obter componentes do objeto pai do collider
         Health playerHealth = collision.GetComponentInParent<Health>();
-        if (playerHealth == null)
+        Movement2D playerMovement = collision.GetComponentInParent<Movement2D>();
+        CombatSystem2D combat = collision.GetComponentInParent<CombatSystem2D>();
+
+        // Health é obrigatório
+        if (playerHealth == null) return;
+        
+        // Se não tiver movimento, não há como aplicar nenhum buff de velocidade ou dano (exceto cura)
+        if (playerMovement == null)
         {
-            Debug.LogWarning("SMART POWER-UP: Player sem componente Health.");
+            Debug.LogWarning("SMART POWER-UP: Player sem componente Movement2D.");
             return;
         }
 
-        // Combat � opcional (s� para o buff de dano)
-        CombatSystem2D combat = collision.GetComponentInParent<CombatSystem2D>();
-
         float healthPercent = (float)playerHealth.health / playerHealth.maxHealth;
-        Debug.Log($"SMART POWER-UP: vida actual = {healthPercent * 100f:0}%");
+        
+        // 1 - DECIDIR EFEITO
+        EffectType chosen = DecideEffect(playerHealth, combat, playerMovement);
+        Debug.Log($"SMART POWER-UP: Efeito escolhido = {chosen} (Vida: {healthPercent * 100f:0}%)");
 
-        // 1 � decidir efeito
-        EffectType chosen = DecideEffect(playerHealth, combat);
-        Debug.Log($"SMART POWER-UP: efeito escolhido = {chosen}");
-
-        // 2 � aplicar efeito
-        ApplyEffect(chosen, playerHealth, combat);
+        // 2 - APLICAR EFEITO
+        ApplyEffect(chosen, playerHealth, combat, playerMovement);
 
         consumed = true;
     }
 
-    private EffectType DecideEffect(Health playerHealth, CombatSystem2D combat)
+    // ------------------------------------------------------------------
+    //                         MÉTODO DE DECISÃO INTELIGENTE
+    // ------------------------------------------------------------------
+    private EffectType DecideEffect(Health playerHealth, CombatSystem2D combat, Movement2D movement)
     {
         float healthPercent = (float)playerHealth.health / playerHealth.maxHealth;
 
-        // Vida baixa ? cura
+        // 1. PRIORIDADE MÁXIMA: SOBREVIVÊNCIA
         if (healthPercent <= lowHealthThreshold)
             return EffectType.Heal;
 
-        // Sem CombatSystem2D n�o conseguimos buff ? cura em vez disso
-        if (combat == null)
+        // 2. PRIORIDADE: CONTEXTO DE COMBATE
+        if (IsEnemyNearby())
+        {
+            // O jogador está em combate, o DANO é mais útil
+            if (combat != null)
+                return EffectType.DamageBoost;
+            
+            // Fallback: está em perigo mas não pode lutar? Cura.
             return EffectType.Heal;
+        }
 
-        // Caso normal ? buff de dano
-        return EffectType.DamageBoost;
+        // 3. PRIORIDADE: CONTEXTO DE EXPLORAÇÃO/MOVIMENTO
+        // Não há inimigos por perto, a VELOCIDADE é mais útil
+        if (movement != null)
+        {
+            return EffectType.SpeedBoost;
+        }
+
+        // 4. FALLBACK FINAL: Cura se falhar todas as verificações de componente.
+        return EffectType.Heal;
     }
 
-    private void ApplyEffect(EffectType effect, Health playerHealth, CombatSystem2D combat)
+    private bool IsEnemyNearby()
     {
+        // Verifica se existe algum objeto na Layer "Enemy" dentro do raio 'enemyCheckRadius'.
+        // ATENÇÃO: Confirme que a sua Layer de inimigos se chama "Enemy"
+        LayerMask enemyLayer = LayerMask.GetMask("enemyLayers"); 
+        
+        Collider2D hit = Physics2D.OverlapCircle(transform.position, enemyCheckRadius, enemyLayer);
+        
+        return hit != null;
+    }
+
+    // ------------------------------------------------------------------
+    //                         APLICAÇÃO DO EFEITO
+    // ------------------------------------------------------------------
+    private void ApplyEffect(EffectType effect, Health playerHealth, CombatSystem2D combat, Movement2D movement)
+    {
+        HideVisuals(); 
+
         switch (effect)
         {
             case EffectType.Heal:
                 HealToFull(playerHealth);
-                HideVisuals();          // some logo
-                Destroy(gameObject);    // n�o precisa de ficar vivo
+                // Notifica o spawner e destrói
+                if (spawner != null) spawner.PowerupApanhado();
+                Destroy(gameObject); 
                 break;
 
             case EffectType.DamageBoost:
-                if (combat != null)
-                {
-                    HideVisuals();                      // some logo ao apanhar
-                    StartCoroutine(DamageBoostRoutine(combat));
-                }
-                else
-                {
-                    // fallback de seguran�a
-                    HealToFull(playerHealth);
-                    HideVisuals();
-                    Destroy(gameObject);
-                }
+                StartCoroutine(DamageBoostRoutine(combat));
+                break;
+            
+            case EffectType.SpeedBoost: 
+                movement.ActivateSpeedJumpBuff(speedMultiplier, jumpMultiplier, speedDuration);
+                // Notifica o spawner e destrói
+                if (spawner != null) spawner.PowerupApanhado();
+                Destroy(gameObject); 
                 break;
         }
     }
+
+    // --- Rotinas de Efeitos ---
 
     private void HealToFull(Health playerHealth)
     {
@@ -111,10 +154,6 @@ public class SmartPowerUp : MonoBehaviour
             playerHealth.Heal(amountToFull);
             Debug.Log("SMART POWER-UP: Cura total aplicada.");
         }
-        else
-        {
-            Debug.Log("SMART POWER-UP: Vida ja estava cheia.");
-        }
     }
 
     private IEnumerator DamageBoostRoutine(CombatSystem2D combat)
@@ -123,14 +162,17 @@ public class SmartPowerUp : MonoBehaviour
         int boostedDamage = Mathf.RoundToInt(originalDamage * damageMultiplier);
 
         combat.damage = boostedDamage;
-        Debug.Log($"SMART POWER-UP: Dano aumentado para {boostedDamage} durante {effectDuration}s.");
+        Debug.Log($"SMART POWER-UP: Dano aumentado para {boostedDamage} durante {damageDuration}s.");
 
-        yield return new WaitForSeconds(effectDuration);
+        yield return new WaitForSeconds(damageDuration);
 
         combat.damage = originalDamage;
         Debug.Log("SMART POWER-UP: Buff terminou, dano voltou ao normal.");
 
-        // Agora podemos destruir o objecto invis�vel
+        // Notifica o spawner APÓS o buff terminar
+        if (spawner != null) spawner.PowerupApanhado();
+
+        // Destrói o objeto
         Destroy(gameObject);
     }
 
@@ -138,5 +180,12 @@ public class SmartPowerUp : MonoBehaviour
     {
         if (col != null) col.enabled = false;
         if (sr != null) sr.enabled = false;
+    }
+
+    // Gizmo para visualizar o raio de verificação de inimigos
+    private void OnDrawGizmosSelected()
+    {
+        Gizmos.color = Color.yellow;
+        Gizmos.DrawWireSphere(transform.position, enemyCheckRadius);
     }
 }

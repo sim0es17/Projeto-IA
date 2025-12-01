@@ -17,9 +17,9 @@ GameObject:
   - component: {fileID: 3538730646336838822}
   - component: {fileID: 5082763437075755683}
   - component: {fileID: 6283073055009100789}
-  m_Layer: 7
+  m_Layer: 6
   m_Name: SkeletonEnemy
-  m_TagString: Player
+  m_TagString: Enemy
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -270,7 +270,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 6785350556649017207}
-  m_Layer: 7
+  m_Layer: 6
   m_Name: GroundCheck
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -301,7 +301,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 8491974259468159439}
-  m_Layer: 7
+  m_Layer: 6
   m_Name: AttackPoint
   m_TagString: Untagged
   m_Icon: {fileID: 0}

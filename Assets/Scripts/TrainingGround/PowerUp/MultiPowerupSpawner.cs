@@ -1,19 +1,21 @@
 using System.Collections;
 using UnityEngine;
 
-public class HealthPowerupSpawner : MonoBehaviour
+// Renomeado para refletir a sua nova funcionalidade
+public class MultiPowerupSpawner : MonoBehaviour
 {
     [Header("Referencias")]
-    public GameObject powerupPrefab;   // prefab do cora��o
-    public Collider2D arenaBounds;     // o BoxCollider2D do ArenaBounds
-    public LayerMask groundMask;       // s� a layer Ground
+    // ARRAY de todos os prefabs de powerups que podem ser spawnados
+    public GameObject[] powerupPrefabs; 
+    public Collider2D arenaBounds; 
+    public LayerMask groundMask; 
 
     [Header("Tempo")]
-    public float tempoNoMapa = 10f;       // tempo que o powerup fica activo
-    public float tempoEntreSpawns = 2f;   // pausa entre spawns
+    public float tempoNoMapa = 10f; 
+    public float tempoEntreSpawns = 2f; 
 
     [Header("Outros")]
-    public float offsetY = 0.5f;       // sobe um bocadinho acima do ch�o
+    public float offsetY = 0.5f; 
     public int maxTentativas = 20;
 
     private GameObject powerupAtual;
@@ -21,9 +23,17 @@ public class HealthPowerupSpawner : MonoBehaviour
 
     private void Start()
     {
+        if (powerupPrefabs == null || powerupPrefabs.Length == 0)
+        {
+            Debug.LogError("MultiPowerupSpawner: O array 'powerupPrefabs' está vazio. Não é possível gerar Power-Ups.");
+            return;
+        }
         SpawnNovoPowerup();
     }
 
+    /// <summary>
+    /// Chamado pelos Power-Ups quando são apanhados.
+    /// </summary>
     public void PowerupApanhado()
     {
         if (lifetimeRoutine != null)
@@ -43,21 +53,34 @@ public class HealthPowerupSpawner : MonoBehaviour
     {
         if (powerupAtual != null)
             Destroy(powerupAtual);
+        
+        // 1. ESCOLHE UM PREFAB ALEATORIAMENTE
+        int randomIndex = Random.Range(0, powerupPrefabs.Length);
+        GameObject selectedPrefab = powerupPrefabs[randomIndex];
 
         Vector2 pos = GetPosicaoAleatoriaNoChao();
-        powerupAtual = Instantiate(powerupPrefab, pos, Quaternion.identity);
+        powerupAtual = Instantiate(selectedPrefab, pos, Quaternion.identity);
 
-        // liga o powerup a este spawner
+        // 2. LIGA O POWER-UP AO ESTE SPAWNER
+        // Usamos GetComponents<IRespawnable> se tivéssemos interfaces, 
+        // mas vamos usar a abordagem mais direta para os seus scripts existentes:
+        
+        // A. Verifica HealthPowerup (se existir)
         HealthPowerup hp = powerupAtual.GetComponent<HealthPowerup>();
         if (hp != null)
             hp.spawner = this;
 
-        // ADICIONE ESTA SECÇÃO PARA O NOVO POWER-UP
+        // B. Verifica SpeedJumpPowerup (se existir)
         SpeedJumpPowerup sjp = powerupAtual.GetComponent<SpeedJumpPowerup>();
         if (sjp != null)
-        sjp.spawner = this;
-        // --------------------------------------------
+            sjp.spawner = this;
 
+        // C. Verifica SmartPowerUp (se existir)
+        SmartPowerUp smartp = powerupAtual.GetComponent<SmartPowerUp>();
+        if (smartp != null)
+            smartp.spawner = this;
+
+        // 3. INICIA O TIMER DE VIDA
         if (lifetimeRoutine != null)
             StopCoroutine(lifetimeRoutine);
 
@@ -71,12 +94,13 @@ public class HealthPowerupSpawner : MonoBehaviour
         while (tempo > 0f)
         {
             if (estePowerup == null)
-                yield break; // j� foi apanhado
+                yield break; // Já foi apanhado (o PowerupApanhado() foi chamado)
 
             tempo -= Time.deltaTime;
             yield return null;
         }
 
+        // Tempo esgotado
         if (estePowerup != null)
         {
             Destroy(estePowerup);
@@ -87,31 +111,39 @@ public class HealthPowerupSpawner : MonoBehaviour
 
     private Vector2 GetPosicaoAleatoriaNoChao()
     {
+        if (arenaBounds == null)
+        {
+            Debug.LogError("ArenaBounds não atribuído. Usando (0,0).");
+            return Vector2.zero;
+        }
+
         Bounds b = arenaBounds.bounds;
 
         float minX = b.min.x;
         float maxX = b.max.x;
-        float startY = b.max.y + 2f;
+        float startY = b.max.y + 2f; // Começa um pouco acima do limite superior
 
         for (int i = 0; i < maxTentativas; i++)
         {
             float x = Random.Range(minX, maxX);
             Vector2 origem = new Vector2(x, startY);
 
+            // Tenta encontrar o chão
             RaycastHit2D hit = Physics2D.Raycast(
                 origem,
                 Vector2.down,
-                b.size.y + 10f,
+                b.size.y + 10f, // Distância grande o suficiente
                 groundMask
             );
 
             if (hit.collider != null)
             {
+                // Ponto encontrado no chão, sobe um pouco
                 return hit.point + Vector2.up * offsetY;
             }
         }
 
-        Debug.LogWarning("HealthPowerupSpawner: n�o encontrei ch�o, a usar centro dos bounds.");
+        Debug.LogWarning("MultiPowerupSpawner: Não encontrei chão após " + maxTentativas + " tentativas. A usar centro dos bounds.");
         return b.center;
     }
 }
