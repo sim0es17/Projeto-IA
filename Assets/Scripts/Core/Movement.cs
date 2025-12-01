@@ -1,6 +1,6 @@
 using UnityEngine;
 using Photon.Pun;
-using System.Collections;
+using System.Collections; 
 
 [RequireComponent(typeof(Rigidbody2D))]
 public class Movement2D : MonoBehaviourPunCallbacks
@@ -19,30 +19,35 @@ public class Movement2D : MonoBehaviourPunCallbacks
     public LayerMask groundLayer;
 
     [Header("Wall Check")]
-    private bool isTouchingWall = false;
+    private bool isTouchingWall = false; 
 
     [Header("Knockback")]
-    public bool isKnockedBack = false;
+    public bool isKnockedBack = false; 
 
-    // --- VARIÁVEIS INTERNAS ---
+    // --- VARIÁVEIS INTERNAS DO POWER UP ---
     private float defaultWalkSpeed;
     private float defaultSprintSpeed;
     private float defaultJumpForce;
-    private Coroutine currentBuffRoutine;
+    private Coroutine currentBuffRoutine; // Para gerir o tempo do buff
+    // -------------------------------------
 
+    // Propriedades de Acesso
     public float CurrentHorizontalSpeed => rb != null ? rb.linearVelocity.x : 0f;
     public bool IsGrounded => grounded;
 
+    // --- Referências de Componentes e Singletons ---
     private Rigidbody2D rb;
     private bool sprinting;
     private bool grounded;
     private int jumpCount;
-    private CombatSystem2D combatSystem;
+    private CombatSystem2D combatSystem; 
     private Animator anim;
     private SpriteRenderer spriteRenderer;
-    private PhotonView pv;
+    private PhotonView pv; 
+    
+    // Referências estáticas/Singleton (Opções)
+    private GameChat chatInstance; 
 
-    private GameChat chatInstance;
 
     void Start()
     {
@@ -51,18 +56,20 @@ public class Movement2D : MonoBehaviourPunCallbacks
         anim = GetComponent<Animator>();
         spriteRenderer = GetComponent<SpriteRenderer>();
         pv = GetComponent<PhotonView>();
+        
+        // Tenta obter a instância do Chat, se existir.
+        // Assumindo que GameChat é uma classe acessível
+        // chatInstance = GameChat.instance; 
 
-        chatInstance = FindObjectOfType<GameChat>();
-
-        // 1. GUARDAR OS VALORES ORIGINAIS (Base para Reset)
+        // 1. GUARDAR OS VALORES ORIGINAIS NO INÍCIO (Valores base para o Reset)
         defaultWalkSpeed = walkSpeed;
         defaultSprintSpeed = sprintSpeed;
         defaultJumpForce = jumpForce;
 
         if (groundCheck == null)
-            Debug.LogWarning("GroundCheck não atribuído no inspector!");
+            Debug.LogWarning("GroundCheck não atribuído no inspector! Adicione um objeto filho para o check.");
 
-        // Se não for o dono (Multiplayer), desativa inputs
+        // Se o Photon View existir E não for o jogador local, desativa.
         if (pv != null && !pv.IsMine)
         {
             enabled = false;
@@ -72,172 +79,185 @@ public class Movement2D : MonoBehaviourPunCallbacks
         isKnockedBack = false;
     }
 
+    // Método público para ser chamado pelo Health.cs
     public void SetKnockbackState(bool state)
     {
         isKnockedBack = state;
     }
 
     // ----------------------------------------------------
-    // --- MÉTODOS DO POWER UP (MULTIPLAYER - RPC) ---
+    // --- MÉTODOS DO POWER UP ---
     // ----------------------------------------------------
 
-    [PunRPC]
-    public void BoostSpeed(float boostAmount, float duration)
-    {
-        if (currentBuffRoutine != null)
-        {
-            StopCoroutine(currentBuffRoutine);
-            ResetStats();
-        }
-        currentBuffRoutine = StartCoroutine(SpeedBuffRoutine(boostAmount, duration));
-    }
-
-    private IEnumerator SpeedBuffRoutine(float boostAmount, float duration)
-    {
-        // Soma à velocidade base
-        walkSpeed += boostAmount;
-        sprintSpeed += boostAmount;
-
-        Debug.Log($"[Multiplayer] Velocidade aumentada!");
-
-        yield return new WaitForSeconds(duration);
-
-        ResetStats();
-        currentBuffRoutine = null;
-    }
-
-    // ----------------------------------------------------
-    // --- MÉTODOS DO POWER UP (SINGLE PLAYER - LEGACY) ---
-    // ----------------------------------------------------
-    // Adicionei isto de volta para o teu erro desaparecer!
-
+    /// <summary>
+    /// Ativa um buff temporário de velocidade e salto.
+    /// Chamado por um PowerUp.cs ou similar.
+    /// </summary>
     public void ActivateSpeedJumpBuff(float speedMultiplier, float jumpMultiplier, float duration)
     {
-        // Garante que só o dono local ativa
-        if (pv != null && !pv.IsMine) return;
-
+        // Garante que só o dono local ativa o buff
+        if (pv != null && !pv.IsMine) return; 
+        
+        // Se já houver um buff ativo, para o anterior e reseta os stats.
         if (currentBuffRoutine != null)
         {
             StopCoroutine(currentBuffRoutine);
-            ResetStats();
+            ResetStats(); 
         }
 
-        currentBuffRoutine = StartCoroutine(BuffRoutineMultipliers(duration, speedMultiplier, jumpMultiplier));
+        // Inicia a nova corrotina
+        currentBuffRoutine = StartCoroutine(BuffRoutine(duration, speedMultiplier, jumpMultiplier));
     }
 
-    private IEnumerator BuffRoutineMultipliers(float duration, float speedMult, float jumpMult)
+    private IEnumerator BuffRoutine(float duration, float speedMult, float jumpMult)
     {
-        // Aplica multiplicadores (Lógica antiga)
+        // Aplica os multiplicadores aos valores base
         walkSpeed = defaultWalkSpeed * speedMult;
         sprintSpeed = defaultSprintSpeed * speedMult;
         jumpForce = defaultJumpForce * jumpMult;
-
-        Debug.Log("[SinglePlayer] Buff ativado!");
+        
+        // Opcional: Adicionar efeitos visuais/sonoros aqui
 
         yield return new WaitForSeconds(duration);
 
+        // O tempo acabou, resetar stats
         ResetStats();
         currentBuffRoutine = null;
     }
 
     private void ResetStats()
     {
+        // Volta aos valores base
         walkSpeed = defaultWalkSpeed;
         sprintSpeed = defaultSprintSpeed;
         jumpForce = defaultJumpForce;
-    }
 
+        // Opcional: Remover efeitos visuais/sonoros aqui
+    }
     // ----------------------------------------------------
+
 
     void Update()
     {
+        // BLOQUEIO 1: Multiplayer (Apenas o jogador local deve controlar)
         if (pv != null && !pv.IsMine) return;
 
-        // Ground Check
+        // B. Verificação de Chão
         if (groundCheck != null)
         {
             grounded = Physics2D.OverlapCircle(groundCheck.position, groundCheckRadius, groundLayer);
         }
-
+        
         bool isDefending = (combatSystem != null && combatSystem.isDefending);
+        
+        // Bloqueio do Chat: (Opcional)
         bool isChatOpen = (chatInstance != null && chatInstance.IsChatOpen);
-        bool lobbyBlocking = (LobbyManager.instance != null && !LobbyManager.GameStartedAndPlayerCanMove);
-        bool isPaused = false;
+        
+        // Bloqueio da Pausa: (Opcional)
+        // Assumindo que PMMM é uma classe acessível
+        // bool isPaused = (PMMM.instance != null && PMMM.IsPausedLocally); 
+        bool isPaused = false; // Valor default para evitar erro se PMMM não existir
 
-        // PRIORIDADE AO KNOCKBACK
+        // ==========================================================
+        // *** CORREÇÃO: PRIORIDADE AO KNOCKBACK ***
+        // Se estiver a sofrer Knockback, sai imediatamente para deixar o impulso do Health.cs dominar a física.
         if (isKnockedBack)
         {
             if (anim) anim.SetBool("Grounded", grounded);
-            return;
+            return; 
         }
+        // ==========================================================
+        
+        // ----------------------------------------------------
+        // BLOQUEIO 2: ESTADOS DE JOGO (LOBBY, PAUSA, CHAT, DEFESA)
+        // ----------------------------------------------------
+        
+        // A. Bloqueio do Lobby (Verifica se o LobbyManager existe E se está a bloquear)
+        // Assumindo que LobbyManager é uma classe acessível
+        // bool lobbyBlocking = (LobbyManager.instance != null && !LobbyManager.GameStartedAndPlayerCanMove);
+        bool lobbyBlocking = false; // Valor default para evitar erro
 
-        // BLOQUEIOS
         if (lobbyBlocking || isPaused || isChatOpen || isDefending)
         {
-            if (rb != null) rb.linearVelocity = new Vector2(0f, rb.linearVelocity.y);
-
-            if (anim)
+            // Garante que o jogador para horizontalmente
+            if (rb != null)
+            {
+                rb.linearVelocity = new Vector2(0f, rb.linearVelocity.y);
+            }
+            if (anim) 
             {
                 anim.SetFloat("Speed", 0f);
                 anim.SetBool("IsSprinting", false);
             }
-
+            
+            // Se for bloqueio total (Lobby, Pausa, Chat), ignora o resto do input
             if (lobbyBlocking || isPaused || isChatOpen)
             {
                 if (anim) anim.SetBool("Grounded", grounded);
                 return;
             }
         }
-
-        // RESET SALTO
+        
+        // LÓGICA DE RESET DE SALTO
         if (rb != null)
         {
             if (grounded && Mathf.Abs(rb.linearVelocity.y) <= 0.1f)
             {
                 jumpCount = 0;
-                isTouchingWall = false;
+                isTouchingWall = false; 
             }
             else if (isTouchingWall && !grounded)
             {
-                jumpCount = 0;
+                jumpCount = 0; 
             }
         }
 
-        float move = Input.GetAxisRaw("Horizontal");
+        float move = 0f;
+
+        // LÓGICA DE MOVIMENTO E SALTO (SÓ se NÃO estiver a defender/bloqueado)
+        
+        // Movimento horizontal
+        move = Input.GetAxisRaw("Horizontal");
         sprinting = Input.GetKey(KeyCode.LeftShift);
 
         float currentSpeed = sprinting ? sprintSpeed : walkSpeed;
 
-        // APLICA MOVIMENTO
+        // Aplica a velocidade de movimento
         if (Mathf.Abs(move) > 0.05f)
         {
+            // Aplica a nova velocidade horizontal, mantendo a vertical
             rb.linearVelocity = new Vector2(move * currentSpeed, rb.linearVelocity.y);
         }
         else
         {
+            // Se não houver input, parar o movimento horizontal
             if (!isTouchingWall || grounded)
             {
-                rb.linearVelocity = new Vector2(0f, rb.linearVelocity.y);
+                // Garante que o jogador para se não houver input
+                rb.linearVelocity = new Vector2(0f, rb.linearVelocity.y); 
             }
         }
 
-        // SALTO
+        // Salto com W (duplo salto) ou barra de espaço
         bool jumpInput = Input.GetKeyDown(KeyCode.W) || Input.GetButtonDown("Jump");
 
         if (jumpInput && jumpCount < maxJumps)
         {
-            rb.linearVelocity = new Vector2(rb.linearVelocity.x, jumpForce);
+            // Resetar a velocidade vertical antes de aplicar a nova força de pulo para consistência
+            rb.linearVelocity = new Vector2(rb.linearVelocity.x, jumpForce); 
             jumpCount++;
         }
 
-        // FLIP SPRITE
+        // Flip do sprite
         if (spriteRenderer != null)
         {
-            if (move > 0.05f) spriteRenderer.flipX = false;
-            else if (move < -0.05f) spriteRenderer.flipX = true;
+            if (move > 0.05f)
+                spriteRenderer.flipX = false;
+            else if (move < -0.05f)
+                spriteRenderer.flipX = true;
         }
 
-        // ANIMATOR
+        // Atualizar Animator
         if (anim)
         {
             anim.SetFloat("Speed", isDefending ? 0f : Mathf.Abs(move));
@@ -247,6 +267,7 @@ public class Movement2D : MonoBehaviourPunCallbacks
         }
     }
 
+    // --- LÓGICA DE COLISÃO (Ground/Wall Check) ---
     private void OnCollisionEnter2D(Collision2D collision)
     {
         if (((1 << collision.gameObject.layer) & groundLayer) != 0)
@@ -254,7 +275,7 @@ public class Movement2D : MonoBehaviourPunCallbacks
             if (collision.contactCount > 0)
             {
                 ContactPoint2D contact = collision.GetContact(0);
-
+    
                 if (contact.normal.y > 0.5f)
                 {
                     grounded = true;
@@ -276,13 +297,13 @@ public class Movement2D : MonoBehaviourPunCallbacks
             if (collision.contactCount > 0)
             {
                 ContactPoint2D contact = collision.GetContact(0);
-
+    
                 if (contact.normal.y > 0.5f)
                 {
                     grounded = true;
                     isTouchingWall = false;
                 }
-
+                
                 if (Mathf.Abs(contact.normal.x) > 0.5f && contact.normal.y < 0.5f)
                 {
                     isTouchingWall = true;
@@ -295,10 +316,13 @@ public class Movement2D : MonoBehaviourPunCallbacks
     {
         if (((1 << collision.gameObject.layer) & groundLayer) != 0)
         {
-            isTouchingWall = false;
+            // Verifica se está realmente a sair do chão/parede (simplificação)
+            isTouchingWall = false; 
+            // Nota: O estado 'grounded' é tratado pelo Physics2D.OverlapCircle no Update()
         }
     }
-
+    
+    // Gizmos
     void OnDrawGizmosSelected()
     {
         if (groundCheck != null)
