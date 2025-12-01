@@ -97,9 +97,9 @@ GameObject:
   - component: {fileID: 6764933627428410906}
   - component: {fileID: 6568012762042214897}
   - component: {fileID: 4642842173782732286}
-  m_Layer: 6
+  m_Layer: 7
   m_Name: Orc
-  m_TagString: Enemy
+  m_TagString: Player
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -517,7 +517,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 2370973604299485676}
-  m_Layer: 6
+  m_Layer: 7
   m_Name: GroundCheck
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -684,7 +684,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1155275024724574856}
-  m_Layer: 6
+  m_Layer: 7
   m_Name: AttackPoint
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1270,7 +1270,7 @@ GameObject:
   m_Component:
   - component: {fileID: 3262774280140531142}
   - component: {fileID: 2564270368170708282}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: NameTagParente
   m_TagString: Untagged
   m_Icon: {fileID: 0}
