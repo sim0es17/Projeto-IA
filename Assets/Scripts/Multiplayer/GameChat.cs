@@ -2,6 +2,8 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 using WebSocketSharp;
+using Photon.Pun;
+using System.Collections;
 
 public class GameChat : MonoBehaviour
 {
@@ -37,6 +39,10 @@ public class GameChat : MonoBehaviour
         {
             if (isInputFiieldToggled)
             {
+                string messagetoSend = $"{PhotonNetwork.LocalPlayer.NickName}: {InputField.text}";
+
+                GetComponent<PhotonView>().RPC("SendChatMessage", RpcTarget.All, messagetoSend);
+
                 InputField.text = "";
                 isInputFiieldToggled = false;
 
@@ -47,11 +53,9 @@ public class GameChat : MonoBehaviour
         }
     }
 
-    /*void SendMessageToChat(string message)
+    [PunRPC]
+    void SendChatMessage(string _message)
     {
-        if (!string.IsNullOrEmpty(message))
-        {
-            chatText.text += "\n" + message;
-        }
-    }*/
+        chatText.text = chatText.text + "\n" + _message;
+    }
 }
