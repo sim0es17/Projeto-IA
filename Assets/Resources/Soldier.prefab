@@ -670,9 +670,9 @@ MonoBehaviour:
   target: {fileID: 0}
   minX: -19
   maxX: 19
+  minY: -100
   followY: 1
   fixedY: 0
-  minY: -100
   lockX: 0
   lockedX: 0
 --- !u!114 &2411068745142178634
