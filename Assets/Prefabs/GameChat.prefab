@@ -149,7 +149,6 @@ GameObject:
   - component: {fileID: 1037308199618117317}
   - component: {fileID: 5893713843662642505}
   - component: {fileID: 2234637909885477413}
-  - component: {fileID: 6988018275069845211}
   m_Layer: 5
   m_Name: GameChat
   m_TagString: Untagged
@@ -253,30 +252,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 19cae000f9f47b0498b7dbff3ca0ba4d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  chatText: {fileID: 2687509579939988699}
   inputField: {fileID: 1363828234997203889}
---- !u!114 &6988018275069845211
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4414858705285102287}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: aa584fbee541324448dd18d8409c7a41, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  ObservedComponentsFoldoutOpen: 1
-  Group: 0
-  prefixField: -1
-  Synchronization: 3
-  OwnershipTransfer: 0
-  observableSearch: 2
-  ObservedComponents: []
-  sceneViewId: 0
-  InstantiationId: 0
-  isRuntimeInstantiated: 0
+  chatDisplay: {fileID: 2687509579939988699}
 --- !u!1 &4586396552219823241
 GameObject:
   m_ObjectHideFlags: 0
@@ -695,7 +672,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!224 &6096820749151124223
 RectTransform:
   m_ObjectHideFlags: 0

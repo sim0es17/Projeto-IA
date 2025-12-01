@@ -7,7 +7,7 @@ public class PMMM : MonoBehaviour
     // --- Singleton Pattern ---
     public static PMMM instance;
 
-    // --- Variável de Estado Estática (A chave para a sincronização local) ---
+    // --- Variável de Estado Estática (A chave para a sincronização local do chat/movimento) ---
     public static bool IsPausedLocally = false;
 
     [Header("UI Reference")]
@@ -18,20 +18,19 @@ public class PMMM : MonoBehaviour
 
     void Awake()
     {
-        // Implementação do Singleton
+        // 1. Implementação do Singleton
         if (instance != null && instance != this)
         {
             Destroy(this.gameObject);
             return;
         }
         instance = this;
-        // Permite que o Manager persista entre cenas
+        
+        // 2. Permite que o Manager persista entre cenas (Menu -> Jogo -> Menu)
         DontDestroyOnLoad(this.gameObject);
 
-        // Define o estado inicial como "não pausado"
+        // 3. Define o estado inicial como "não pausado" e desativa a UI
         IsPausedLocally = false;
-        
-        // Garante que o painel de UI começa desativado
         if (pausePanel != null)
         {
             pausePanel.SetActive(false);
@@ -40,17 +39,19 @@ public class PMMM : MonoBehaviour
 
     void OnEnable()
     {
+        // Subscreve ao evento de carregamento de cena para redefinir o estado.
         SceneManager.sceneLoaded += OnSceneLoaded;
     }
 
     void OnDisable()
     {
+        // Cancela a subscrição para evitar erros.
         SceneManager.sceneLoaded -= OnSceneLoaded;
     }
 
     private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
     {
-        // Define que a pausa só pode ser ativada nas cenas de jogo
+        // Define que a pausa só pode ser ativada nas cenas de jogo (e não no Menu)
         isGameSceneLoaded = !scene.name.Contains("Menu"); 
 
         // Se carregarmos uma cena nova, garante que o painel está fechado e o estado redefinido
@@ -58,17 +59,18 @@ public class PMMM : MonoBehaviour
         {
             pausePanel.SetActive(false);
         }
+        // Redefine a flag de pausa (crucial)
         IsPausedLocally = false;
         
         // Garante que o cursor está no estado correto para o novo ambiente
         if (!isGameSceneLoaded)
         {
-            // Se for menu/lobby, liberta o cursor (visível e livre)
+            // Se for menu/lobby, liberta o cursor para UI (visível e livre)
             UnlockCursor();
         }
         else
         {
-            // Se for jogo, confina o cursor (visível e confinado, para jogo 2D)
+            // Se for jogo, confina o cursor (visível e confinado)
             LockCursor(); 
         }
     }
@@ -81,8 +83,22 @@ public class PMMM : MonoBehaviour
         // Verifica o input da tecla ESCAPE
         if (Input.GetKeyDown(KeyCode.Escape))
         {
-            // O GameChat verifica o ESCAPE primeiro, mas se o chat estiver fechado,
-            // esta lógica é executada para pausar/retomar o jogo.
+            // NOTA: O GameChat deve ter a prioridade para fechar o chat
+            // Se o chat NÃO estiver aberto, esta lógica é executada para pausar/retomar.
+            
+            // Assumimos que o GameChat.instance existe
+            GameChat chatInstance = GameChat.instance;
+            
+            // Se o chat estiver aberto, o GameChat lida com o ESCAPE primeiro e fecha-o.
+            // Se o chat estiver fechado, o Menu de Pausa é ativado.
+            if (chatInstance != null && chatInstance.inputField.gameObject.activeSelf)
+            {
+                // O chat está aberto. O GameChat deve fechar-se, e o ESCAPE não deve chegar aqui.
+                // Mas, por segurança, se o chat falhar ao bloquear, não pausamos.
+                return;
+            }
+            
+            // Pausar/Retomar
             if (IsPausedLocally)
             {
                 ResumeGame();
@@ -105,18 +121,19 @@ public class PMMM : MonoBehaviour
     {
         if (IsPausedLocally || !isGameSceneLoaded) return;
 
+        // 1. Define o estado (Bloqueia o movimento e chat via estático)
         IsPausedLocally = true;
 
-        // 1. Ativa a UI do Menu de Pausa
+        // 2. Ativa a UI do Menu de Pausa
         if (pausePanel != null)
         {
             pausePanel.SetActive(true);
         }
 
-        // 2. Liberta o cursor para que o jogador possa interagir com a UI
+        // 3. Liberta o cursor para que o jogador possa interagir com a UI
         UnlockCursor();
 
-        Debug.Log("Jogo pausado localmente. Inputs bloqueados.");
+        Debug.Log("[PMMM] Jogo pausado localmente. Inputs bloqueados.");
     }
 
     /// <summary>
@@ -126,18 +143,19 @@ public class PMMM : MonoBehaviour
     {
         if (!IsPausedLocally) return;
 
+        // 1. Define o estado
         IsPausedLocally = false;
 
-        // 1. Desativa a UI do Menu de Pausa
+        // 2. Desativa a UI do Menu de Pausa
         if (pausePanel != null)
         {
             pausePanel.SetActive(false);
         }
 
-        // 2. Confina o cursor novamente para retomar o gameplay
+        // 3. Confina o cursor novamente para retomar o gameplay
         LockCursor();
 
-        Debug.Log("Jogo retomado. Inputs reativados.");
+        Debug.Log("[PMMM] Jogo retomado. Inputs reativados.");
     }
 
     // ------------------------------------
@@ -156,7 +174,7 @@ public class PMMM : MonoBehaviour
         }
         else
         {
-            Debug.LogError("RoomManager não encontrado! Não é possível sair da sala.");
+            Debug.LogError("[PMMM] RoomManager não encontrado! Não é possível sair da sala.");
         }
 
         // Garante que o estado de pausa é redefinido e o cursor libertado

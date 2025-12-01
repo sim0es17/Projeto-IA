@@ -4,7 +4,7 @@ using Hashtable = ExitGames.Client.Photon.Hashtable;
 using Photon.Realtime;
 using UnityEngine.SceneManagement;
 
-// Permite acessar SCM.selectedCharacter diretamente
+// Permite acessar SCM.selectedCharacter diretamente (Assumindo que SCM é um script estático ou Singleton)
 using static SCM; 
 
 public class RoomManager : MonoBehaviourPunCallbacks
@@ -21,37 +21,39 @@ public class RoomManager : MonoBehaviourPunCallbacks
     private string sceneToLoadOnLeave = "";
 
     [Header("Player and Spawn")]
-    // REMOVIDO: public GameObject player; // Substituído por SCM.selectedCharacter
     public Transform[] spawnPoints; // Array com posições de spawn no mapa
 
     [Header("UI References")]
-    public GameObject roomCam;       // A câmara usada no lobby/espera (desativada ao começar)
-    public GameObject nameUI;        // UI para inserir o nome (Menu Principal)
-    public GameObject connectigUI;   // UI de 'A Conectar...'
+    [Tooltip("A câmara usada no lobby/espera (desativada ao começar)")]
+    public GameObject roomCam; 
+    [Tooltip("UI para inserir o nome (Menu Principal)")]
+    public GameObject nameUI; 
+    [Tooltip("UI de 'A Conectar...'")]
+    public GameObject connectigUI; 
 
     [Header("Room Info")]
     public string mapName = "Noname"; 
-    private string nickName = "Nameless"; // Variável local, o valor de PhotonNetwork.NickName é o que vale.
-
+    
     // --- Propriedade pública usada pelo GameChat.cs ---
     public bool IsNamePanelActive => nameUI != null && nameUI.activeSelf;
 
     void Awake()
     {
-        // Garante que haja apenas uma instância do RoomManager (Singleton)
+        // 1. Garante que haja apenas uma instância do RoomManager (Singleton)
         if (instance != null && instance != this)
         {
             Destroy(this.gameObject);
             return;
         }
         instance = this;
-        // Mantém o objeto vivo entre cenas (Menu -> Jogo)
+        // 2. Mantém o objeto vivo entre cenas (Menu -> Jogo)
         DontDestroyOnLoad(this.gameObject);
+        
+        Debug.Log("[RoomManager] Inicializado.");
     }
 
     public void ChangeNickName(string _name)
     {
-        nickName = _name;
         // Define o nickname global do Photon ANTES de tentar conectar
         PhotonNetwork.NickName = _name;
     }
@@ -64,7 +66,7 @@ public class RoomManager : MonoBehaviourPunCallbacks
         if (!PhotonNetwork.IsConnected)
         {
             PhotonNetwork.ConnectUsingSettings();
-            Debug.Log("Tentando conectar ao Photon Master Server...");
+            Debug.Log("[RoomManager] Tentando conectar ao Photon Master Server...");
 
             // UI Feedback
             if (nameUI != null) nameUI.SetActive(false);
@@ -86,6 +88,7 @@ public class RoomManager : MonoBehaviourPunCallbacks
         }
         else
         {
+            // Se o nickname foi definido mas não está conectado, inicia a conexão
             ConnectToMaster();
         }
     }
@@ -93,15 +96,16 @@ public class RoomManager : MonoBehaviourPunCallbacks
     // Lógica interna para criar ou entrar
     private void JoinRoomLogic()
     {
-        Debug.Log("Conexão estabelecida. Tentando entrar/criar sala...");
+        Debug.Log("[RoomManager] Conexão estabelecida. Tentando entrar/criar sala...");
 
         RoomOptions ro = new RoomOptions();
-        ro.MaxPlayers = 4; // Limite de jogadores
+        ro.MaxPlayers = 4; 
 
-        // Propriedades da sala (sincroniza qual mapa está a ser jogado)
+        // Propriedades da sala
         ro.CustomRoomProperties = new Hashtable()
         {
-            { "mapSceneIndex", SceneManager.GetActiveScene().buildIndex },
+            // Assumimos que a cena atual é a cena do menu/lobby com o RoomManager
+            { "mapSceneIndex", SceneManager.GetActiveScene().buildIndex }, 
             { "mapName", mapName }
         };
 
@@ -111,7 +115,7 @@ public class RoomManager : MonoBehaviourPunCallbacks
             "mapName"
         };
 
-        // Entra ou cria a sala baseada no nome guardado ou padrão
+        // Entra ou cria a sala
         PhotonNetwork.JoinOrCreateRoom(PlayerPrefs.GetString("RoomNameToJoin", "DefaultRoom"), ro, typedLobby: null);
     }
 
@@ -119,7 +123,7 @@ public class RoomManager : MonoBehaviourPunCallbacks
 
     public void LeaveGameAndGoToMenu(string menuSceneName)
     {
-        Debug.Log("A sair do jogo e a voltar ao menu...");
+        Debug.Log("[RoomManager] A sair do jogo e a voltar ao menu...");
 
         // 1. Reset ao tempo (caso estivesse em pausa)
         Time.timeScale = 1f;
@@ -134,9 +138,14 @@ public class RoomManager : MonoBehaviourPunCallbacks
         }
         else
         {
-            // Fallback se não estiver na sala
+            // Fallback se não estiver na sala/conectado
             SceneManager.LoadScene(menuSceneName);
-            Destroy(this.gameObject);
+            // Destrói o Singleton aqui para resetar o estado.
+            if (instance == this)
+            {
+                instance = null;
+                Destroy(this.gameObject);
+            }
         }
     }
 
@@ -145,15 +154,16 @@ public class RoomManager : MonoBehaviourPunCallbacks
     public override void OnConnectedToMaster()
     {
         base.OnConnectedToMaster();
-        Debug.Log("Conectado ao Master Server! Tentando entrar em sala...");
-        // O JoinRoomLogic será chamado aqui, após a conexão.
+        Debug.Log("[RoomManager] Conectado ao Master Server! Tentando entrar em sala...");
         JoinRoomLogic();
     }
 
     public override void OnDisconnected(DisconnectCause cause)
     {
         base.OnDisconnected(cause);
-        Debug.LogError($"Desconectado. Causa: {cause}");
+        Debug.LogError($"[RoomManager] Desconectado. Causa: {cause}");
+        
+        // Garante que o feedback da UI volta ao estado inicial
         if (connectigUI != null) connectigUI.SetActive(false);
         if (nameUI != null) nameUI.SetActive(true);
     }
@@ -161,14 +171,14 @@ public class RoomManager : MonoBehaviourPunCallbacks
     public override void OnJoinedRoom()
     {
         base.OnJoinedRoom();
-        Debug.Log($"Entrou na sala '{PhotonNetwork.CurrentRoom.Name}' com sucesso!");
+        Debug.Log($"[RoomManager] Entrou na sala '{PhotonNetwork.CurrentRoom.Name}' com sucesso!");
 
         if (connectigUI != null) connectigUI.SetActive(false);
-
-        // Define as vidas iniciais assim que entra
+        
+        // Define as vidas iniciais assim que entra (Apenas define a propriedade)
         SetInitialRespawnCount(PhotonNetwork.LocalPlayer);
         
-        // Avisa o LobbyManager para mostrar a UI de espera
+        // Avisa o LobbyManager para mostrar a UI de espera e iniciar a contagem
         if (LobbyManager.instance != null)
         {
             LobbyManager.instance.OnRoomEntered();
@@ -178,27 +188,23 @@ public class RoomManager : MonoBehaviourPunCallbacks
     public override void OnLeftRoom()
     {
         base.OnLeftRoom();
-        Debug.Log("Saiu da sala (OnLeftRoom). Carregando Menu...");
+        Debug.Log("[RoomManager] Saiu da sala (OnLeftRoom). Carregando Menu...");
 
         // Carrega a cena do menu
         if (!string.IsNullOrEmpty(sceneToLoadOnLeave))
         {
-            SceneManager.LoadScene(sceneToLoadOnLeave);
-            
-            // Destrói este Singleton para resetar o estado ao voltar ao menu
+            // É essencial destruir ANTES de carregar a cena para evitar 
+            // que a nova cena tente aceder a este objeto durante o carregamento
             if (instance == this)
             {
-                Destroy(this.gameObject);
+                // ** CORREÇÃO DE SEGURANÇA DO SINGLETON **
+                instance = null; // Limpa a referência estática
+                Destroy(this.gameObject); // Destrói o objeto
             }
+
+            SceneManager.LoadScene(sceneToLoadOnLeave);
             sceneToLoadOnLeave = "";
         }
-    }
-
-    public override void OnPlayerLeftRoom(Player otherPlayer)
-    {
-        base.OnPlayerLeftRoom(otherPlayer);
-        Debug.Log($"{otherPlayer.NickName} saiu da sala.");
-        // A lista de players atualiza automaticamente
     }
 
     // --- LÓGICA DE SPAWN E RESPAWN ---
@@ -211,7 +217,7 @@ public class RoomManager : MonoBehaviourPunCallbacks
             Hashtable props = new Hashtable();
             props.Add(RESPAWN_COUNT_KEY, MAX_RESPAWNS);
             player.SetCustomProperties(props);
-            Debug.Log($"Respawns definidos para {player.NickName}: {MAX_RESPAWNS}");
+            Debug.Log($"[RoomManager] Respawns definidos para {player.NickName}: {MAX_RESPAWNS}");
         }
     }
 
@@ -223,20 +229,22 @@ public class RoomManager : MonoBehaviourPunCallbacks
 
         if (spawnPoints == null || spawnPoints.Length == 0)
         {
-            Debug.LogError("ERRO: Array 'spawnPoints' está vazio no RoomManager!");
+            Debug.LogError("[RoomManager] ERRO: Array 'spawnPoints' está vazio!");
             return;
         }
         
         // ** INTEGRANDO A SELEÇÃO DE PERSONAGEM **
+        // Usamos SCM.selectedCharacter, assumindo que foi definido no menu
         string characterToSpawnName = SCM.selectedCharacter;
 
         if (string.IsNullOrEmpty(characterToSpawnName) || characterToSpawnName == "None")
         {
-            Debug.LogError("ERRO: Personagem não selecionado. Não é possível fazer o spawn.");
-            return;
+            Debug.LogError("[RoomManager] ERRO: Personagem não selecionado. Não é possível fazer o spawn.");
+            // Fallback para um nome padrão se falhar
+            characterToSpawnName = "DefaultPlayerPrefab"; 
         }
         
-        // Se tiver vidas (ou spawn inicial, onde o contador é 2)
+        // Se tiver vidas (incluindo o spawn inicial)
         if (respawnsLeft >= 0)
         {
             // --- Lógica de seleção de Ponto de Spawn ---
@@ -246,26 +254,18 @@ public class RoomManager : MonoBehaviourPunCallbacks
 
             Transform spawnPoint = spawnPoints[spawnIndex];
 
-            // Instancia o jogador na rede usando o NOME DO PERSONAGEM
+            // Instancia o jogador na rede
             GameObject _player = PhotonNetwork.Instantiate(characterToSpawnName, spawnPoint.position, Quaternion.identity);
 
             // Configurações locais (Ativa Movement/Combat no jogador local)
             _player.GetComponent<PlayerSetup>()?.IsLocalPlayer();
 
-            // Sincroniza o Nickname (se o PlayerSetup não o fizer)
-            if (_player.GetComponent<PhotonView>() != null)
-            {
-                // Chamamos o RPC no PlayerSetup (ou no boneco) para sincronizar o nome
-                // Não precisamos de definir PhotonNetwork.LocalPlayer.NickName novamente.
-                _player.GetComponent<PhotonView>().RPC("SetNickname", RpcTarget.AllBuffered, PhotonNetwork.NickName);
-            }
-
-            Debug.Log($"Spawn do personagem '{characterToSpawnName}' realizado no ponto {spawnIndex}. Vidas restantes: {respawnsLeft}");
+            Debug.Log($"[RoomManager] Spawn de '{characterToSpawnName}' realizado no ponto {spawnIndex}. Vidas restantes: {respawnsLeft}");
         }
         else
         {
-            Debug.Log("Game Over: Limite de respawns atingido.");
-            // Lógica de Game Over / Espectador aqui
+            Debug.Log("[RoomManager] Game Over: Limite de respawns atingido.");
+            // Lógica de Game Over / Espectador
         }
     }
 
@@ -295,7 +295,7 @@ public class RoomManager : MonoBehaviourPunCallbacks
         {
             return (int)count;
         }
-        // Retorna o valor máximo se a propriedade ainda não foi definida
+        // Retorna o valor máximo se a propriedade ainda não foi definida (primeiro spawn/erro)
         return MAX_RESPAWNS;
     }
 
@@ -307,6 +307,6 @@ public class RoomManager : MonoBehaviourPunCallbacks
         {
             if (players[i] == player) return i;
         }
-        return 0;
+        return 0; // Fallback
     }
 }

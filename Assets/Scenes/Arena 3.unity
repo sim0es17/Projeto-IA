@@ -458,6 +458,7 @@ MonoBehaviour:
   countdownText: {fileID: 2075933454}
   playerListText: {fileID: 594993389}
   startGameButton: {fileID: 908620828}
+  gameChatPrefab: {fileID: 695476110}
 --- !u!4 &156769602
 Transform:
   m_ObjectHideFlags: 0
@@ -2415,6 +2416,10 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 2234637909885477413, guid: b26bdf7ae8fdc1d4a88f45b2e406ace3, type: 3}
+      propertyPath: chatPanel
+      value: 
+      objectReference: {fileID: 695476110}
     - target: {fileID: 4414858705285102287, guid: b26bdf7ae8fdc1d4a88f45b2e406ace3, type: 3}
       propertyPath: m_Name
       value: GameChat
@@ -2428,6 +2433,11 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: b26bdf7ae8fdc1d4a88f45b2e406ace3, type: 3}
+--- !u!1 &695476110 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 4414858705285102287, guid: b26bdf7ae8fdc1d4a88f45b2e406ace3, type: 3}
+  m_PrefabInstance: {fileID: 695476109}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &730939105
 GameObject:
   m_ObjectHideFlags: 0
