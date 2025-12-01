@@ -198,7 +198,7 @@ Canvas:
   m_AdditionalShaderChannelsFlag: 25
   m_UpdateRectTransformForStandalone: 0
   m_SortingLayerID: 0
-  m_SortingOrder: 0
+  m_SortingOrder: 1
   m_TargetDisplay: 0
 --- !u!114 &1037308199618117317
 MonoBehaviour:
@@ -252,8 +252,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 19cae000f9f47b0498b7dbff3ca0ba4d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  inputField: {fileID: 1363828234997203889}
-  chatDisplay: {fileID: 2687509579939988699}
+  chatText: {fileID: 2687509579939988699}
+  InputField: {fileID: 1363828234997203889}
 --- !u!1 &4586396552219823241
 GameObject:
   m_ObjectHideFlags: 0
@@ -456,7 +456,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: Press T to toggle chat and Enter to send
+  m_text: Press Y to toggle chat and Enter to send
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
