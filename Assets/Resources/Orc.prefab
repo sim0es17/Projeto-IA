@@ -263,13 +263,15 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 901226c15bab7804485b229e432e463f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  moveSpeed: 5
+  walkSpeed: 5
+  sprintSpeed: 8
   jumpForce: 10
+  maxJumps: 2
   groundCheck: {fileID: 2370973604299485676}
+  groundCheckRadius: 0.1
   groundLayer:
     serializedVersion: 2
     m_Bits: 8
-  groundCheckRadius: 0.1
   isKnockedBack: 0
 --- !u!114 &1828006499820484772
 MonoBehaviour:
@@ -387,9 +389,9 @@ MonoBehaviour:
   health: 100
   isLocalPlayer: 0
   healthBar: {fileID: 8421429996304016182}
+  healthText: {fileID: 0}
   knockbackForceFallback: 10
   knockbackDurationFallback: 0.3
-  healthText: {fileID: 0}
 --- !u!95 &6568012762042214897
 Animator:
   serializedVersion: 7
@@ -860,9 +862,9 @@ MonoBehaviour:
   target: {fileID: 0}
   minX: -19
   maxX: 19
+  minY: -100
   followY: 1
   fixedY: 0
-  minY: -100
   lockX: 0
   lockedX: 0
 --- !u!114 &3706928543963486036
