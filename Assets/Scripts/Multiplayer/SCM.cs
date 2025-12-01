@@ -3,11 +3,9 @@ using UnityEngine.SceneManagement;
 
 public class SCM : MonoBehaviour
 {
-    // Variável estática para armazenar a escolha do personagem.
-    // Estática para que possa ser acessada de qualquer lugar.
+    // Mantemos a estática para acesso rápido, mas o importante agora é o PlayerPrefs
     public static string selectedCharacter = "None";
 
-    // Enum para melhor organização e tipagem dos personagens
     public enum CharacterType
     {
         None,
@@ -17,51 +15,42 @@ public class SCM : MonoBehaviour
         Orc
     }
 
-    // Método público para ser chamado pelos botões de seleção de personagem
+    // Método chamado pelos botões (String)
     public void SelectCharacter(string characterName)
     {
         selectedCharacter = characterName;
-        Debug.Log("Personagem selecionado: " + selectedCharacter);
 
-        // Opcional: Aqui você pode adicionar lógica para destacar o botão selecionado na UI.
+        // --- A CORREÇÃO MÁGICA ---
+        // Guarda a escolha na memória permanente do jogo.
+        // Assim, quando mudas de cena, o RoomManager consegue ler isto!
+        PlayerPrefs.SetString("SelectedCharacter", characterName);
+
+        Debug.Log("Personagem selecionado e salvo: " + selectedCharacter);
     }
-    
-    // Sobrecarga usando o enum para flexibilidade (Recomendado)
+
+    // Método chamado pelos botões (Enum - Opcional se usares o de cima)
     public void SelectCharacter(CharacterType character)
     {
-        if (character == CharacterType.None)
-        {
-            selectedCharacter = "None";
-        }
-        else
-        {
-            // Converte o enum para string e armazena
-            selectedCharacter = character.ToString();
-        }
-        
-        Debug.Log("Personagem selecionado: " + selectedCharacter);
+        string charName = character.ToString();
 
-        // Opcional: Adicionar lógica visual de seleção aqui
+        if (character == CharacterType.None)
+            charName = "None";
+
+        // Chama a função principal para salvar
+        SelectCharacter(charName);
     }
 
-
-    // Método público para ser chamado pelo botão "Play"
     public void GoToLobby()
     {
-        // Verifica se um personagem foi selecionado antes de prosseguir
+        // Verifica se escolheu algum personagem válido
         if (selectedCharacter == "None" || string.IsNullOrEmpty(selectedCharacter))
         {
             Debug.LogError("Por favor, selecione um personagem antes de clicar em Play.");
-            // Opcional: Mostrar uma mensagem de aviso na tela para o usuário.
             return;
         }
 
-        // Carrega a próxima cena
-        // **IMPORTANTE**: Certifique-se de que a cena "MultiplayerLobby" está adicionada
-        // nas configurações de Build Settings (File > Build Settings).
+        // Carrega a cena do Lobby
+        // Certifica-te que o nome da cena aqui é EXATAMENTE igual ao da tua cena de Lobby
         SceneManager.LoadScene("MultiplayerLobby");
     }
-
-    // Exemplo de como você acessaria o personagem escolhido na cena MultiplayerLobby:
-    // string meuPersonagem = SCM.selectedCharacter;
 }
