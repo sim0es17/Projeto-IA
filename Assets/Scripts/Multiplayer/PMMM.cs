@@ -1,13 +1,17 @@
 using UnityEngine;
 using Photon.Pun;
 using UnityEngine.SceneManagement;
+using System.Collections; // Adicionado, caso precise de corrotinas no futuro
 
 public class PMMM : MonoBehaviour
 {
     // --- Singleton Pattern ---
     public static PMMM instance;
 
-    // --- Variável de Estado Estática (A chave para a sincronização local do chat/movimento) ---
+    // --- Variável de Estado Estática ---
+    /// <summary>
+    /// Flag estática usada por Movement2D e CombatSystem2D para bloquear inputs.
+    /// </summary>
     public static bool IsPausedLocally = false;
 
     [Header("UI Reference")]
@@ -51,7 +55,7 @@ public class PMMM : MonoBehaviour
 
     private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
     {
-        // Define que a pausa só pode ser ativada nas cenas de jogo (e não no Menu)
+        // Define que a pausa só pode ser ativada nas cenas de jogo (assumindo que "Menu" é a cena de lobby/menu)
         isGameSceneLoaded = !scene.name.Contains("Menu"); 
 
         // Se carregarmos uma cena nova, garante que o painel está fechado e o estado redefinido
@@ -63,48 +67,50 @@ public class PMMM : MonoBehaviour
         IsPausedLocally = false;
         
         // Garante que o cursor está no estado correto para o novo ambiente
-        if (!isGameSceneLoaded)
+        if (isGameSceneLoaded)
         {
-            // Se for menu/lobby, liberta o cursor para UI (visível e livre)
-            UnlockCursor();
+            LockCursor(); // Confina o cursor para o gameplay
         }
         else
         {
-            // Se for jogo, confina o cursor (visível e confinado)
-            LockCursor(); 
+            UnlockCursor(); // Liberta o cursor para a UI do menu/lobby
         }
     }
 
     void Update()
     {
-        // Apenas processa o input de pausa se estivermos numa cena de jogo E numa sala
-        if (!isGameSceneLoaded || !PhotonNetwork.InRoom) return;
+        // Apenas processa o input de pausa se estivermos numa cena de jogo E (opcionalmente) numa sala Photon
+        // Se estiver num jogo Single Player, PhotonNetwork.InRoom é falso, mas a pausa deve funcionar na mesma.
+        if (!isGameSceneLoaded) return;
         
         // Verifica o input da tecla ESCAPE
         if (Input.GetKeyDown(KeyCode.Escape))
         {
-            // NOTA: O GameChat deve ter a prioridade para fechar o chat
-            // Se o chat NÃO estiver aberto, esta lógica é executada para pausar/retomar.
+            // --- VERIFICAÇÕES DE PRIORIDADE ---
             
-            // Assumimos que o GameChat.instance existe
+            // 1. PRIORIDADE DO CHAT: Se o chat existir E estiver aberto, bloqueia a pausa.
             GameChat chatInstance = GameChat.instance;
-            
-            // Se o chat estiver aberto, o GameChat lida com o ESCAPE primeiro e fecha-o.
-            // Se o chat estiver fechado, o Menu de Pausa é ativado.
-            if (chatInstance != null && chatInstance.inputField.gameObject.activeSelf)
+            if (chatInstance != null && chatInstance.IsChatOpen) 
             {
-                // O chat está aberto. O GameChat deve fechar-se, e o ESCAPE não deve chegar aqui.
-                // Mas, por segurança, se o chat falhar ao bloquear, não pausamos.
+                return; // O GameChat.cs é responsável por fechar o input field quando ESC é pressionado.
+            }
+
+            // 2. PRIORIDADE DO LOBBY: Se o LobbyManager existir E ainda não tiver começado, bloqueia a pausa.
+            // Esta é uma segurança extra, mas na prática, o PMMM não deve existir no Lobby, ou isGameSceneLoaded deve ser falso.
+            bool lobbyBlocking = (LobbyManager.instance != null && !LobbyManager.GameStartedAndPlayerCanMove);
+            if (lobbyBlocking)
+            {
                 return;
             }
-            
-            // Pausar/Retomar
+
+            // 3. Pausar/Retomar
             if (IsPausedLocally)
             {
                 ResumeGame();
             }
             else
             {
+                // Só pausa se o jogo estiver ativo.
                 PauseGame();
             }
         }
@@ -164,22 +170,37 @@ public class PMMM : MonoBehaviour
     
     /// <summary>
     /// Sai da sala Photon e volta ao menu principal.
+    /// Se não estiver em sala, apenas carrega o menu.
     /// </summary>
     public void LeaveGame()
     {
-        if (RoomManager.instance != null)
+        // Garante que o estado de pausa é redefinido
+        IsPausedLocally = false;
+
+        if (PhotonNetwork.InRoom)
         {
-            // Assumimos que a cena do menu principal se chama "MenuPrincipal"
-            RoomManager.instance.LeaveGameAndGoToMenu("MenuPrincipal");
+            // Assume que existe um RoomManager ou que o código de saída está aqui.
+            // Se usar o RoomManager, o código será parecido com isto:
+            // RoomManager.instance.LeaveGameAndGoToMenu("MenuPrincipal");
+            
+            // Se o RoomManager não estiver disponível, o método Photon padrão é:
+            PhotonNetwork.LeaveRoom();
+            
+            // O OnLeftRoom (callback do Photon) tratará da transição de cena.
+            // Para simplificar, vou adicionar a transição diretamente aqui:
+            SceneManager.LoadScene("MenuPrincipal"); // Substitua pelo nome da sua cena de Menu
         }
         else
         {
-            Debug.LogError("[PMMM] RoomManager não encontrado! Não é possível sair da sala.");
+            // Single Player ou não conectado:
+            SceneManager.LoadScene("MenuPrincipal"); // Substitua pelo nome da sua cena de Menu
         }
 
-        // Garante que o estado de pausa é redefinido e o cursor libertado
-        IsPausedLocally = false;
-        UnlockCursor();
+        UnlockCursor(); // Garante que o cursor está livre no menu
+        
+        // Destruir o objeto PMMM para garantir que ele é recriado limpo no Menu,
+        // já que DontDestroyOnLoad foi usado.
+        Destroy(gameObject);
     }
     
     // ------------------------------------
@@ -187,20 +208,20 @@ public class PMMM : MonoBehaviour
     // ------------------------------------
 
     /// <summary>
-    /// Confina o cursor à janela do jogo (Visível e Confined).
+    /// Confina o cursor à janela do jogo.
     /// </summary>
     public void LockCursor()
     {
         Cursor.lockState = CursorLockMode.Confined; 
-        Cursor.visible = true; // Mantém o cursor visível
+        Cursor.visible = true;
     }
 
     /// <summary>
-    /// Liberta o cursor para interagir com a UI (Visível e None).
+    /// Liberta o cursor para interagir com a UI.
     /// </summary>
     public void UnlockCursor()
     {
         Cursor.lockState = CursorLockMode.None;
-        Cursor.visible = true; // Mantém o cursor visível
+        Cursor.visible = true; 
     }
 }
