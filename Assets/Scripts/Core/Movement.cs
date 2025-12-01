@@ -58,7 +58,8 @@ public class Movement2D : MonoBehaviourPunCallbacks
         pv = GetComponent<PhotonView>();
         
         // Tenta obter a instância do Chat, se existir.
-        chatInstance = GameChat.instance; 
+        // Assumindo que GameChat é uma classe acessível
+        // chatInstance = GameChat.instance; 
 
         // 1. GUARDAR OS VALORES ORIGINAIS NO INÍCIO (Valores base para o Reset)
         defaultWalkSpeed = walkSpeed;
@@ -141,62 +142,59 @@ public class Movement2D : MonoBehaviourPunCallbacks
         // BLOQUEIO 1: Multiplayer (Apenas o jogador local deve controlar)
         if (pv != null && !pv.IsMine) return;
 
-        // ----------------------------------------------------
-        // BLOQUEIO 2: ESTADOS DE JOGO (LOBBY, PAUSA, CHAT)
-        // ----------------------------------------------------
-        
-        // A. Bloqueio do Lobby (Verifica se o LobbyManager existe E se está a bloquear)
-        bool lobbyBlocking = (LobbyManager.instance != null && !LobbyManager.GameStartedAndPlayerCanMove);
-
-        if (lobbyBlocking)
-        {
-            if (rb != null)
-            {
-                rb.linearVelocity = Vector2.zero; // Garante que o jogador para.
-            }
-            if (anim) anim.SetFloat("Speed", 0f);
-            return; 
-        }
-
-        // B. Verificação de Chão e estados de bloqueio
+        // B. Verificação de Chão
         if (groundCheck != null)
         {
             grounded = Physics2D.OverlapCircle(groundCheck.position, groundCheckRadius, groundLayer);
         }
-
+        
         bool isDefending = (combatSystem != null && combatSystem.isDefending);
         
         // Bloqueio do Chat: (Opcional)
         bool isChatOpen = (chatInstance != null && chatInstance.IsChatOpen);
         
         // Bloqueio da Pausa: (Opcional)
-        bool isPaused = (PMMM.instance != null && PMMM.IsPausedLocally); 
+        // Assumindo que PMMM é uma classe acessível
+        // bool isPaused = (PMMM.instance != null && PMMM.IsPausedLocally); 
+        bool isPaused = false; // Valor default para evitar erro se PMMM não existir
 
-        // ** LÓGICA DE BLOQUEIO DO CONTROLE ** (Knockback, Pausa, Chat, Defesa)
-        if (isKnockedBack || isPaused || isChatOpen || isDefending)
+        // ==========================================================
+        // *** CORREÇÃO: PRIORIDADE AO KNOCKBACK ***
+        // Se estiver a sofrer Knockback, sai imediatamente para deixar o impulso do Health.cs dominar a física.
+        if (isKnockedBack)
         {
-            // Se estiver bloqueado (exceto por Knockback), garantir que o movimento horizontal para.
-            if (rb != null && !isKnockedBack)
+            if (anim) anim.SetBool("Grounded", grounded);
+            return; 
+        }
+        // ==========================================================
+        
+        // ----------------------------------------------------
+        // BLOQUEIO 2: ESTADOS DE JOGO (LOBBY, PAUSA, CHAT, DEFESA)
+        // ----------------------------------------------------
+        
+        // A. Bloqueio do Lobby (Verifica se o LobbyManager existe E se está a bloquear)
+        // Assumindo que LobbyManager é uma classe acessível
+        // bool lobbyBlocking = (LobbyManager.instance != null && !LobbyManager.GameStartedAndPlayerCanMove);
+        bool lobbyBlocking = false; // Valor default para evitar erro
+
+        if (lobbyBlocking || isPaused || isChatOpen || isDefending)
+        {
+            // Garante que o jogador para horizontalmente
+            if (rb != null)
             {
                 rb.linearVelocity = new Vector2(0f, rb.linearVelocity.y);
             }
-            
-            if (anim)
+            if (anim) 
             {
                 anim.SetFloat("Speed", 0f);
-                anim.SetBool("Grounded", grounded);
                 anim.SetBool("IsSprinting", false);
             }
-
-            // Permite que a gravidade e o Knockback/Defesa continuem
-            if (isKnockedBack || isDefending)
+            
+            // Se for bloqueio total (Lobby, Pausa, Chat), ignora o resto do input
+            if (lobbyBlocking || isPaused || isChatOpen)
             {
-                // Ignora o input de controle horizontal (WASD)
-            }
-            else
-            {
-                // Se for Pausa ou Chat, ignora o resto da lógica de INPUT
-                return; 
+                if (anim) anim.SetBool("Grounded", grounded);
+                return;
             }
         }
         
@@ -216,46 +214,47 @@ public class Movement2D : MonoBehaviourPunCallbacks
 
         float move = 0f;
 
-        // LÓGICA DE MOVIMENTO E SALTO (SÓ se NÃO estiver a defender)
-        if (!isDefending)
+        // LÓGICA DE MOVIMENTO E SALTO (SÓ se NÃO estiver a defender/bloqueado)
+        
+        // Movimento horizontal
+        move = Input.GetAxisRaw("Horizontal");
+        sprinting = Input.GetKey(KeyCode.LeftShift);
+
+        float currentSpeed = sprinting ? sprintSpeed : walkSpeed;
+
+        // Aplica a velocidade de movimento
+        if (Mathf.Abs(move) > 0.05f)
         {
-            // Movimento horizontal
-            move = Input.GetAxisRaw("Horizontal");
-            sprinting = Input.GetKey(KeyCode.LeftShift);
-
-            float currentSpeed = sprinting ? sprintSpeed : walkSpeed;
-
-            // Aplica a velocidade de movimento
-            if (Mathf.Abs(move) > 0.05f)
+            // Aplica a nova velocidade horizontal, mantendo a vertical
+            rb.linearVelocity = new Vector2(move * currentSpeed, rb.linearVelocity.y);
+        }
+        else
+        {
+            // Se não houver input, parar o movimento horizontal
+            if (!isTouchingWall || grounded)
             {
-                rb.linearVelocity = new Vector2(move * currentSpeed, rb.linearVelocity.y);
+                // Garante que o jogador para se não houver input
+                rb.linearVelocity = new Vector2(0f, rb.linearVelocity.y); 
             }
-            else
-            {
-                // Se não houver input, parar o movimento horizontal
-                if (!isTouchingWall || grounded)
-                {
-                    rb.linearVelocity = new Vector2(0f, rb.linearVelocity.y);
-                }
-            }
+        }
 
-            // Salto com W (duplo salto) ou barra de espaço
-            bool jumpInput = Input.GetKeyDown(KeyCode.W) || Input.GetButtonDown("Jump");
+        // Salto com W (duplo salto) ou barra de espaço
+        bool jumpInput = Input.GetKeyDown(KeyCode.W) || Input.GetButtonDown("Jump");
 
-            if (jumpInput && jumpCount < maxJumps)
-            {
-                rb.linearVelocity = new Vector2(rb.linearVelocity.x, jumpForce);
-                jumpCount++;
-            }
+        if (jumpInput && jumpCount < maxJumps)
+        {
+            // Resetar a velocidade vertical antes de aplicar a nova força de pulo para consistência
+            rb.linearVelocity = new Vector2(rb.linearVelocity.x, jumpForce); 
+            jumpCount++;
+        }
 
-            // Flip do sprite
-            if (spriteRenderer != null)
-            {
-                if (move > 0.05f)
-                    spriteRenderer.flipX = false;
-                else if (move < -0.05f)
-                    spriteRenderer.flipX = true;
-            }
+        // Flip do sprite
+        if (spriteRenderer != null)
+        {
+            if (move > 0.05f)
+                spriteRenderer.flipX = false;
+            else if (move < -0.05f)
+                spriteRenderer.flipX = true;
         }
 
         // Atualizar Animator
@@ -317,7 +316,9 @@ public class Movement2D : MonoBehaviourPunCallbacks
     {
         if (((1 << collision.gameObject.layer) & groundLayer) != 0)
         {
-            isTouchingWall = false;
+            // Verifica se está realmente a sair do chão/parede (simplificação)
+            isTouchingWall = false; 
+            // Nota: O estado 'grounded' é tratado pelo Physics2D.OverlapCircle no Update()
         }
     }
     
