@@ -41,13 +41,13 @@ public class Movement2D : MonoBehaviourPunCallbacks
     private bool sprinting;
     private bool grounded;
     private int jumpCount;
-    private CombatSystem2D combatSystem; // Assumindo que existe
+    private CombatSystem2D combatSystem; 
     private Animator anim;
     private SpriteRenderer spriteRenderer;
     private PhotonView pv; 
     
-    // --- REFERÊNCIA DO SINGLETON DO CHAT (É MELHOR OBTER A INSTÂNCIA AQUI) ---
-    private GameChat chatInstance; // Assumindo que existe
+    // --- REFERÊNCIA DO SINGLETON DO CHAT (CORRIGIDA) ---
+    private GameChat chatInstance; 
     // Assumindo que PMMM é uma classe estática de gestão de pausa
     // private PMMM pmmmInstance; 
 
@@ -55,15 +55,13 @@ public class Movement2D : MonoBehaviourPunCallbacks
     void Start()
     {
         rb = GetComponent<Rigidbody2D>();
-        // É vital garantir que estes componentes existem
         combatSystem = GetComponent<CombatSystem2D>();
         anim = GetComponent<Animator>();
         spriteRenderer = GetComponent<SpriteRenderer>();
         pv = GetComponent<PhotonView>();
         
-        // ** CORREÇÃO 1: OBTEM A INSTÂNCIA DO CHAT **
-        // Se a sua classe GameChat for um Singleton
-        // chatInstance = GameChat.instance; 
+        // ** CORREÇÃO: OBTEM A INSTÂNCIA DO CHAT (SINGLETON) **
+        chatInstance = GameChat.instance; 
 
         // --- 1. GUARDAR OS VALORES ORIGINAIS NO INÍCIO ---
         defaultWalkSpeed = walkSpeed;
@@ -91,8 +89,6 @@ public class Movement2D : MonoBehaviourPunCallbacks
     }
 
     // --- MÉTODOS DO POWER UP ---
-    // CORREÇÃO CRÍTICA AQUI: A ordem dos argumentos foi ajustada para:
-    // (speedMultiplier, jumpMultiplier, duration)
     public void ActivateSpeedJumpBuff(float speedMultiplier, float jumpMultiplier, float duration)
     {
         // Garante que só o dono local ativa o buff
@@ -154,9 +150,10 @@ public class Movement2D : MonoBehaviourPunCallbacks
         }
 
         // Verifica o bloqueio principal: Knockback, Pausa, ou Chat
-        // isDefending é uma verificação adicional
         bool isDefending = (combatSystem != null && combatSystem.isDefending);
-        bool isChatOpen = (chatInstance != null && chatInstance.IsChatOpen);
+        
+        // Verifica o estado do Chat (usando a propriedade IsChatOpen do Singleton)
+        bool isChatOpen = (chatInstance != null && chatInstance.IsChatOpen); 
         // bool isPaused = PMMM.IsPausedLocally; // Assumindo a classe PMMM existe
 
         // ** LÓGICA DE BLOQUEIO DO CONTROLE **
@@ -175,8 +172,7 @@ public class Movement2D : MonoBehaviourPunCallbacks
                 anim.SetBool("IsSprinting", false);
             }
 
-            // Apenas o Knockback e a defesa permitem que a gravidade continue. 
-            // Pausa e Chat devem parar o movimento, mas o 'return' não impede a gravidade de atuar.
+            // Permite que o movimento de knockback ou a queda continue
             if (isKnockedBack || isDefending)
             {
                 // Permite que o movimento de knockback ou a queda devido à defesa continue, mas ignora o input.
@@ -184,7 +180,7 @@ public class Movement2D : MonoBehaviourPunCallbacks
             else
             {
                 // Se for Pausa ou Chat, ignora o resto da lógica de INPUT
-                return;
+                return; // Bloqueia todo o input de movimento para as teclas WASD e Shift
             }
         }
         
@@ -247,7 +243,7 @@ public class Movement2D : MonoBehaviourPunCallbacks
                     spriteRenderer.flipX = true;
             }
         }
-        // Se estiver a defender, o movimento é bloqueado (já tratado no topo do Update)
+        // Se estiver a defender, o movimento é bloqueado (tratado no topo do Update)
 
         // Atualizar Animator
         if (anim)
@@ -328,4 +324,3 @@ public class Movement2D : MonoBehaviourPunCallbacks
         }
     }
 }
-
