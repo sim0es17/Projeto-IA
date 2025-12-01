@@ -9,12 +9,12 @@ public class SmartPowerUp : MonoBehaviour
         DamageBoost
     }
 
-    [Header("Decisão")]
+    [Header("Decisï¿½o")]
     [Range(0f, 1f)]
     public float lowHealthThreshold = 0.3f;   // 30% de vida para decidir cura
 
     [Header("Efeitos")]
-    public float effectDuration = 15f;        // Duração do buff de dano
+    public float effectDuration = 15f;        // Duraï¿½ï¿½o do buff de dano
     public float damageMultiplier = 1.5f;     // +50% de dano
 
     private bool consumed = false;
@@ -36,7 +36,7 @@ public class SmartPowerUp : MonoBehaviour
         if (!collision.CompareTag("Player"))
             return;
 
-        // Health é obrigatório
+        // Health ï¿½ obrigatï¿½rio
         Health playerHealth = collision.GetComponentInParent<Health>();
         if (playerHealth == null)
         {
@@ -44,17 +44,17 @@ public class SmartPowerUp : MonoBehaviour
             return;
         }
 
-        // Combat é opcional (só para o buff de dano)
+        // Combat ï¿½ opcional (sï¿½ para o buff de dano)
         CombatSystem2D combat = collision.GetComponentInParent<CombatSystem2D>();
 
         float healthPercent = (float)playerHealth.health / playerHealth.maxHealth;
         Debug.Log($"SMART POWER-UP: vida actual = {healthPercent * 100f:0}%");
 
-        // 1 — decidir efeito
+        // 1 ï¿½ decidir efeito
         EffectType chosen = DecideEffect(playerHealth, combat);
         Debug.Log($"SMART POWER-UP: efeito escolhido = {chosen}");
 
-        // 2 — aplicar efeito
+        // 2 ï¿½ aplicar efeito
         ApplyEffect(chosen, playerHealth, combat);
 
         consumed = true;
@@ -68,7 +68,7 @@ public class SmartPowerUp : MonoBehaviour
         if (healthPercent <= lowHealthThreshold)
             return EffectType.Heal;
 
-        // Sem CombatSystem2D não conseguimos buff ? cura em vez disso
+        // Sem CombatSystem2D nï¿½o conseguimos buff ? cura em vez disso
         if (combat == null)
             return EffectType.Heal;
 
@@ -83,7 +83,7 @@ public class SmartPowerUp : MonoBehaviour
             case EffectType.Heal:
                 HealToFull(playerHealth);
                 HideVisuals();          // some logo
-                Destroy(gameObject);    // não precisa de ficar vivo
+                Destroy(gameObject);    // nï¿½o precisa de ficar vivo
                 break;
 
             case EffectType.DamageBoost:
@@ -94,7 +94,7 @@ public class SmartPowerUp : MonoBehaviour
                 }
                 else
                 {
-                    // fallback de segurança
+                    // fallback de seguranï¿½a
                     HealToFull(playerHealth);
                     HideVisuals();
                     Destroy(gameObject);
@@ -113,7 +113,7 @@ public class SmartPowerUp : MonoBehaviour
         }
         else
         {
-            Debug.Log("SMART POWER-UP: Vida já estava cheia.");
+            Debug.Log("SMART POWER-UP: Vida jï¿½ estava cheia.");
         }
     }
 
@@ -130,7 +130,7 @@ public class SmartPowerUp : MonoBehaviour
         combat.damage = originalDamage;
         Debug.Log("SMART POWER-UP: Buff terminou, dano voltou ao normal.");
 
-        // Agora podemos destruir o objecto invisível
+        // Agora podemos destruir o objecto invisï¿½vel
         Destroy(gameObject);
     }
 
