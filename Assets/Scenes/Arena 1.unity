@@ -5203,7 +5203,6 @@ MonoBehaviour:
   countdownText: {fileID: 1282447432}
   playerListText: {fileID: 1381320678}
   startGameButton: {fileID: 1914707497}
-  gameChatPrefab: {fileID: 495408844}
 --- !u!4 &1519927154
 Transform:
   m_ObjectHideFlags: 0
