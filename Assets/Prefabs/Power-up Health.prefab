@@ -9,7 +9,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 3255658328736133897}
-  - component: {fileID: 3354119705781452794}
+  - component: {fileID: 1732463357188629452}
   m_Layer: 0
   m_Name: SpeedPowerupSpawner
   m_TagString: Untagged
@@ -32,7 +32,7 @@ Transform:
   m_Children: []
   m_Father: {fileID: 3036564304406106605}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &3354119705781452794
+--- !u!114 &1732463357188629452
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -41,7 +41,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 802514016311977584}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 01a1966baf634d449b3db256e2060e72, type: 3}
+  m_Script: {fileID: 11500000, guid: 64ea9524f99c84d47a42543764632dea, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   powerupPrefab: {fileID: 8816147604158316405, guid: c136272ff79c652408234247a49fb2d9, type: 3}

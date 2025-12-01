@@ -3,17 +3,17 @@ using UnityEngine;
 
 public class HealthPowerupSpawner : MonoBehaviour
 {
-    [Header("Referências")]
-    public GameObject powerupPrefab;   // prefab do coração
+    [Header("Referencias")]
+    public GameObject powerupPrefab;   // prefab do coraï¿½ï¿½o
     public Collider2D arenaBounds;     // o BoxCollider2D do ArenaBounds
-    public LayerMask groundMask;       // só a layer Ground
+    public LayerMask groundMask;       // sï¿½ a layer Ground
 
     [Header("Tempo")]
     public float tempoNoMapa = 10f;       // tempo que o powerup fica activo
     public float tempoEntreSpawns = 2f;   // pausa entre spawns
 
     [Header("Outros")]
-    public float offsetY = 0.5f;       // sobe um bocadinho acima do chão
+    public float offsetY = 0.5f;       // sobe um bocadinho acima do chï¿½o
     public int maxTentativas = 20;
 
     private GameObject powerupAtual;
@@ -52,6 +52,12 @@ public class HealthPowerupSpawner : MonoBehaviour
         if (hp != null)
             hp.spawner = this;
 
+        // ADICIONE ESTA SECÃ‡ÃƒO PARA O NOVO POWER-UP
+        SpeedJumpPowerup sjp = powerupAtual.GetComponent<SpeedJumpPowerup>();
+        if (sjp != null)
+        sjp.spawner = this;
+        // --------------------------------------------
+
         if (lifetimeRoutine != null)
             StopCoroutine(lifetimeRoutine);
 
@@ -65,7 +71,7 @@ public class HealthPowerupSpawner : MonoBehaviour
         while (tempo > 0f)
         {
             if (estePowerup == null)
-                yield break; // já foi apanhado
+                yield break; // jï¿½ foi apanhado
 
             tempo -= Time.deltaTime;
             yield return null;
@@ -105,7 +111,7 @@ public class HealthPowerupSpawner : MonoBehaviour
             }
         }
 
-        Debug.LogWarning("HealthPowerupSpawner: não encontrei chão, a usar centro dos bounds.");
+        Debug.LogWarning("HealthPowerupSpawner: nï¿½o encontrei chï¿½o, a usar centro dos bounds.");
         return b.center;
     }
 }
