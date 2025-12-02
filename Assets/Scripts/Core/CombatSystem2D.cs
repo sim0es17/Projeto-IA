@@ -6,13 +6,13 @@ using ExitGames.Client.Photon;
 using System.Collections.Generic;
 using UnityEngine.UI; 
 using TMPro; 
-using Hashtable = ExitGames.Client.Photon.Hashtable; // Alias para a classe Hashtable do Photon
+using Hashtable = ExitGames.Client.Photon.Hashtable; 
 
 [RequireComponent(typeof(PhotonView))]
 public class CombatSystem2D : MonoBehaviourPunCallbacks
 {
     [Header("Ataque")]
-    public int damage;
+    public int damage = 10;
     public float attackRange = 1f;
     public float attackCooldown = 0.5f;
     public Transform attackPoint;
@@ -20,7 +20,7 @@ public class CombatSystem2D : MonoBehaviourPunCallbacks
 
     [Header("Defesa")]
     public float defenseCooldown = 2f;
-    [HideInInspector] public bool isDefending = false;
+    [HideInInspec­tor] public bool isDefending = false;
 
     [Header("Knockback (Dano Player vs Player)")]
     public float pvpKnockbackForce = 5f; 
@@ -39,7 +39,7 @@ public class CombatSystem2D : MonoBehaviourPunCallbacks
     private Animator anim;
     private PhotonView photonView;
     
-    // Referência do GameChat para verificar o estado (pode ser null no SP)
+    // Referência do GameChat para verificar o estado
     private GameChat chatInstance;
 
     void Awake()
@@ -47,7 +47,6 @@ public class CombatSystem2D : MonoBehaviourPunCallbacks
         photonView = GetComponent<PhotonView>();
         
         // O script só deve rodar no jogador local para gerir os inputs.
-        // Se o pv for null (cenas SP sem Network Manager), roda.
         if (photonView != null && !photonView.IsMine)
         {
             enabled = false;
@@ -60,7 +59,7 @@ public class CombatSystem2D : MonoBehaviourPunCallbacks
         // Tenta obter a referência do Singleton do chat, se existir.
         chatInstance = GameChat.instance;
 
-        // Tentar encontrar UI automaticamente (útil para pré-fabs)
+        // Lógica de procura de UI (Útil para prefabs)
         if (defenseIcon == null || defenseText == null)
         {
             Canvas canvas = GetComponentInChildren<Canvas>();
@@ -77,30 +76,31 @@ public class CombatSystem2D : MonoBehaviourPunCallbacks
 
     void Update()
     {
-        // BLOQUEIO 1: Multiplayer (Apenas o jogador local deve controlar)
+        // 1. BLOQUEIO MULTIPLAYER
         if (photonView != null && !photonView.IsMine) return;
 
         // ----------------------------------------------------
-        // BLOQUEIO 2: ESTADOS DE JOGO (LOBBY, PAUSA, CHAT)
+        // 2. BLOQUEIO POR ESTADO DE JOGO (LOBBY, PAUSA, CHAT)
         // ----------------------------------------------------
         
-        // Bloqueio do Chat (Opcional)
+        // a) CHAT
         bool isChatActive = (chatInstance != null && chatInstance.IsChatOpen);
         
-        // Bloqueio da Pausa (Opcional)
-        bool isPaused = (PMMM.instance != null && PMMM.IsPausedLocally); 
+        // b) PAUSA
+        // Verifica se o PMMM existe e se a flag estática está ativa
+        bool isPaused = PMMM.IsPausedLocally; 
         
-        // Bloqueio do Lobby (Opcional - só bloqueia se o LobbyManager existir E não tiver começado)
+        // c) LOBBY
+        // Se o LobbyManager existir, verifica se o jogo AINDA NÃO começou.
         bool lobbyBlocking = (LobbyManager.instance != null && !LobbyManager.GameStartedAndPlayerCanMove);
 
-
+        
         if (isPaused || isChatActive || lobbyBlocking)
         {
-            // Se estivermos em pausa/chat/lobby, paramos de defender.
+            // Força a desativação da defesa em qualquer estado de bloqueio
             if (isDefending)
             {
-                // Se o photonView existir (MP), usa RPC. Se for null (SP), chama localmente.
-                if (photonView != null)
+                if (photonView != null && PhotonNetwork.InRoom)
                 {
                     photonView.RPC(nameof(SetDefenseState), RpcTarget.All, false);
                 }
@@ -109,59 +109,61 @@ public class CombatSystem2D : MonoBehaviourPunCallbacks
                     SetDefenseState(false);
                 }
             }
-            return; // Bloqueia todo o input de combate
+            return; // Bloqueia todo o input de combate (Ataque e Defesa)
         }
 
-        // Lógica de Ataque (Input lido apenas no jogador local)
+        // --- INPUT DE COMBATE (Lógica principal) ---
+
+        // Lógica de Ataque (Mouse 0)
         if (Input.GetMouseButtonDown(0) && Time.time >= nextAttackTime && !isDefending)
         {
             nextAttackTime = Time.time + attackCooldown;
-            // Se o photonView existir (MP), usa RPC. Se for null (SP), chama localmente.
-            if (photonView != null)
+            
+            if (photonView != null && PhotonNetwork.InRoom)
             {
                 photonView.RPC(nameof(Attack), RpcTarget.All);
             }
             else
             {
-                Attack();
+                Attack(); // Chamada local para Single Player
             }
         }
 
-        // --- LÓGICA DE DEFESA ---
+        // LÓGICA DE DEFESA (Mouse 1)
         if (Input.GetMouseButtonDown(1) && Time.time >= nextDefenseTime && !isDefending)
         {
-            if (photonView != null)
+            if (photonView != null && PhotonNetwork.InRoom)
             {
                 photonView.RPC(nameof(SetDefenseState), RpcTarget.All, true);
             }
             else
             {
-                SetDefenseState(true);
+                SetDefenseState(true); // Chamada local
             }
         }
 
         if (Input.GetMouseButtonUp(1) && isDefending)
         {
-            if (photonView != null)
+            if (photonView != null && PhotonNetwork.InRoom)
             {
                 photonView.RPC(nameof(SetDefenseState), RpcTarget.All, false);
             }
             else
             {
-                SetDefenseState(false);
+                SetDefenseState(false); // Chamada local
             }
             nextDefenseTime = Time.time + defenseCooldown;
         }
 
-        // Atualizar o estado visual do cooldown (apenas UI local)
+        // Atualizar o estado visual do cooldown
         UpdateDefenseUI();
     }
 
-    // Implementação do método de UI (Inalterado)
+    // Implementação do método de UI
     private void UpdateDefenseUI()
     {
         if (defenseIcon == null && defenseText == null) return;
-        // ... (Lógica de UI) ...
+
         float remaining = nextDefenseTime - Time.time;
 
         if (remaining > 0f && !isDefending)
@@ -169,7 +171,7 @@ public class CombatSystem2D : MonoBehaviourPunCallbacks
             if (defenseIcon != null)
             {
                 var c = defenseIcon.color;
-                c.a = 0.5f; // Semitransparente em cooldown
+                c.a = 0.5f; 
                 defenseIcon.color = c;
             }
 
@@ -184,28 +186,27 @@ public class CombatSystem2D : MonoBehaviourPunCallbacks
             if (defenseIcon != null)
             {
                 var c = defenseIcon.color;
-                c.a = isDefending ? 0.7f : 1f; // Opaco ou ligeiramente transparente se a defender
+                c.a = isDefending ? 0.7f : 1f; 
                 defenseIcon.color = c;
             }
 
             if (defenseText != null)
-                defenseText.text = ""; // Limpa o texto
+                defenseText.text = ""; 
         }
     }
 
 
-    [PunRPC] // O atributo RPC é necessário mesmo que seja chamado localmente em SP
+    [PunRPC] 
     void Attack()
     {
         if (anim) anim.SetTrigger("Attack");
 
-        // Esta lógica deve correr se for o jogador local (pv.IsMine) OU se não houver PV (SP)
+        // Esta lógica deve correr apenas no proprietário (ou localmente em SP)
         if (photonView == null || photonView.IsMine)
         {
             // Instanciar VFX
             if (hitVFX != null && attackPoint != null)
             {
-                // Se for MP, instancia na rede. Se for SP, instancia localmente.
                 GameObject vfx;
                 if (photonView != null && PhotonNetwork.InRoom)
                 {
@@ -218,20 +219,19 @@ public class CombatSystem2D : MonoBehaviourPunCallbacks
                 StartCoroutine(DestroyVFX(vfx, 1f));
             }
 
-            // Deteção e Cálculo de dano (Apenas o proprietário faz o cálculo de dano)
+            // Deteção e Cálculo de dano
             Collider2D[] hitEnemies = Physics2D.OverlapCircleAll(attackPoint.position, attackRange, enemyLayers);
             foreach (Collider2D enemy in hitEnemies)
             {
                 if (enemy.gameObject == gameObject) continue;
 
-                // Tenta obter o PV do alvo. Se for null (alvo é SP), o targetView é null.
                 PhotonView targetView = enemy.GetComponent<PhotonView>(); 
                 CombatSystem2D targetCombat = enemy.GetComponent<CombatSystem2D>();
 
                 Health targetHealth = enemy.GetComponent<Health>();
                 EnemyHealth enemyHealth = enemy.GetComponent<EnemyHealth>(); 
 
-                if (targetHealth != null || enemyHealth != null) // Se o alvo tem um componente de vida
+                if (targetHealth != null || enemyHealth != null)
                 {
                     bool targetDefending = (targetCombat != null && targetCombat.isDefending);
                     int finalDamage = targetDefending ? damage / 4 : damage; 
@@ -241,12 +241,12 @@ public class CombatSystem2D : MonoBehaviourPunCallbacks
                         // Player vs Player/Self
                         if (targetView != null && targetView.ViewID != photonView.ViewID)
                         {
-                            // MP: Chama RPC com parâmetros de Knockback no alvo
+                            // MP: Chama RPC com parâmetros de Knockback
                             targetView.RPC("TakeDamageComplete", RpcTarget.All, finalDamage, photonView.ViewID, pvpKnockbackForce, pvpKnockbackDuration);
                         }
                         else if (targetView == null && targetHealth.gameObject != gameObject)
                         {
-                            // SP: Chama o método localmente no alvo
+                            // SP: Chama o método localmente
                             targetHealth.TakeDamageComplete(finalDamage, 0, pvpKnockbackForce, pvpKnockbackDuration);
                         }
                     }
@@ -260,12 +260,12 @@ public class CombatSystem2D : MonoBehaviourPunCallbacks
                         }
                         else
                         {
-                            // SP: Chama o método localmente no inimigo
+                            // SP: Chama o método localmente
                             enemyHealth.TakeDamage(finalDamage, 0); 
                         }
                     }
 
-                    // Se estivermos em Multiplayer, atualiza a pontuação local
+                    // Se estivermos em Multiplayer, atualiza a pontuação
                     if (photonView != null && PhotonNetwork.InRoom)
                     {
                         PhotonNetwork.LocalPlayer.AddScore(finalDamage);
@@ -279,7 +279,7 @@ public class CombatSystem2D : MonoBehaviourPunCallbacks
     [PunRPC]
     public void KillConfirmed()
     {
-        // A lógica de kills é tipicamente Multiplayer
+        // Lógica de kills é tipicamente Multiplayer
         if (photonView != null && !photonView.IsMine) return;
 
         if (photonView != null && PhotonNetwork.InRoom)
@@ -301,16 +301,15 @@ public class CombatSystem2D : MonoBehaviourPunCallbacks
         yield return new WaitForSeconds(delay);
         if (vfx == null) yield break;
 
-        // Lógica de destruição segura para SP e MP
         PhotonView vfxView = vfx.GetComponent<PhotonView>();
         
         if (vfxView != null && vfxView.IsMine)
         {
-            PhotonNetwork.Destroy(vfx); // Destruir na rede (MP)
+            PhotonNetwork.Destroy(vfx); 
         }
         else if (vfxView == null)
         {
-            Destroy(vfx); // Destruir localmente (SP ou objetos locais em MP)
+            Destroy(vfx); 
         }
     }
 
@@ -330,7 +329,6 @@ public class CombatSystem2D : MonoBehaviourPunCallbacks
     {
         if (attackPoint == null) return;
         Gizmos.color = Color.red;
-        // Desenha a área de ataque no editor para visualização
         Gizmos.DrawWireSphere(attackPoint.position, attackRange);
     }
 }

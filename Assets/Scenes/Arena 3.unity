@@ -1204,7 +1204,7 @@ Canvas:
   m_AdditionalShaderChannelsFlag: 25
   m_UpdateRectTransformForStandalone: 0
   m_SortingLayerID: 0
-  m_SortingOrder: 0
+  m_SortingOrder: 5
   m_TargetDisplay: 0
 --- !u!1 &394839484
 GameObject:
@@ -1933,7 +1933,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6307296911403907026, guid: a98a376fd915cbc49b4c8df582787856, type: 3}
       propertyPath: m_SortingOrder
-      value: 1
+      value: 50
       objectReference: {fileID: 0}
     - target: {fileID: 7043114858364171124, guid: a98a376fd915cbc49b4c8df582787856, type: 3}
       propertyPath: sceneViewId
@@ -4688,7 +4688,7 @@ Canvas:
   m_AdditionalShaderChannelsFlag: 25
   m_UpdateRectTransformForStandalone: 0
   m_SortingLayerID: 0
-  m_SortingOrder: 0
+  m_SortingOrder: 10
   m_TargetDisplay: 0
 --- !u!1 &1116299402
 GameObject:
@@ -6710,7 +6710,7 @@ Canvas:
   m_AdditionalShaderChannelsFlag: 25
   m_UpdateRectTransformForStandalone: 0
   m_SortingLayerID: 0
-  m_SortingOrder: 0
+  m_SortingOrder: 500
   m_TargetDisplay: 0
 --- !u!224 &1687204909
 RectTransform:
