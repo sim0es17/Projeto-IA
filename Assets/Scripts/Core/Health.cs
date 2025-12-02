@@ -41,16 +41,25 @@ public class Health : MonoBehaviourPunCallbacks
         UpdateHealthUI();
     }
 
-    // --- DANO (RPCs) ---
+    // ---------------------------------------------------------------------------------
+    // --- 1. MÉTODOS RPC DE DANO ---
+    // ---------------------------------------------------------------------------------
+
     [PunRPC]
-    public void TakeDamage(int _damage, int attackerViewID) { TakeDamageComplete(_damage, attackerViewID, 0f, 0f); }
+    public void TakeDamage(int _damage, int attackerViewID)
+    {
+        TakeDamageComplete(_damage, attackerViewID, 0f, 0f);
+    }
 
     [PunRPC]
     public void TakeDamageComplete(int _damage, int attackerViewID, float attackerKnockbackForce, float attackerKnockbackDuration)
     {
         if (isDead) return;
+
         health = Mathf.Max(health - _damage, 0);
         UpdateHealthUI();
+
+        Debug.Log($"{gameObject.name} recebeu {_damage} de dano. Vida restante: {health}");
 
         // Lógica de Knockback (apenas local)
         if (view.IsMine && attackerViewID != -1)
@@ -71,92 +80,119 @@ public class Health : MonoBehaviourPunCallbacks
         }
     }
 
-    // --- KNOCKBACK ---
+    // ---------------------------------------------------------------------------------
+    // --- 2. LÓGICA DE KNOCKBACK ---
+    // ---------------------------------------------------------------------------------
+
     public void ApplyKnockback(Vector3 attackerPosition, float force, float duration)
     {
         if (rb == null || playerMovement == null || isDead || isKnockedBack) return;
+
         Vector2 direction = (transform.position - attackerPosition).normalized;
         if (direction.y < 0.2f) direction.y = 0.2f;
-        StartCoroutine(KnockbackRoutine(direction.normalized, force, duration));
+        direction = direction.normalized;
+
+        StartCoroutine(KnockbackRoutine(direction, force, duration));
     }
 
     private IEnumerator KnockbackRoutine(Vector2 direction, float force, float duration)
     {
         isKnockedBack = true;
         if (playerMovement != null) playerMovement.SetKnockbackState(true);
+
         rb.linearVelocity = Vector2.zero;
         rb.AddForce(direction * force, ForceMode2D.Impulse);
+
         yield return new WaitForSeconds(duration);
+
         if (playerMovement != null) playerMovement.SetKnockbackState(false);
         isKnockedBack = false;
     }
 
     // ---------------------------------------------------------------------------------
-    // --- LÓGICA DE MORTE (CORRIGIDA PARA SINGLE E MULTIPLAYER) ---
+    // --- 3. LÓGICA DE MORTE (HÍBRIDA: SINGLE & MULTIPLAYER) ---
     // ---------------------------------------------------------------------------------
 
     private void HandleDeath(int attackerViewID)
     {
         Debug.Log($"{gameObject.name} morreu!");
 
-        // --- 1. MODO MULTIPLAYER ---
-        // Verifica se estamos ligados e se existe RoomManager
-        if (PhotonNetwork.IsConnected && RoomManager.instance != null)
+        // Só o dono trata da lógica
+        if (!view.IsMine) return;
+
+        // --- MODO SINGLE PLAYER (Prioridade) ---
+        // Verifica se existe um GameManager na cena
+        GameObject spGameManager = GameObject.Find("GameManager");
+        if (spGameManager != null)
         {
-            if (view.IsMine)
+            Debug.Log("Modo Single Player detetado.");
+            // Tenta mostrar o DeathMenu localmente
+            DeathMenu dm = FindObjectOfType<DeathMenu>();
+            if (dm != null) dm.Show();
+
+            // Destrói localmente
+            Destroy(gameObject);
+            return;
+        }
+
+        // --- MODO MULTIPLAYER ---
+        if (PhotonNetwork.IsConnected)
+        {
+            // Tenta encontrar o RoomManager (Singleton ou Pesquisa)
+            RoomManager manager = RoomManager.instance;
+
+            if (manager == null)
             {
-                // Avisa o RoomManager (ele decide se faz Respawn ou Game Over)
-                RoomManager.instance.HandleMyDeath();
-
-                // Atualiza Kills/Deaths
-                UpdatePhotonStats(attackerViewID);
-
-                // Destrói na rede
-                PhotonNetwork.Destroy(gameObject);
+                // Fallback de segurança: procura na cena
+                manager = FindObjectOfType<RoomManager>();
             }
-            return; // Sai da função, já tratámos de tudo
-        }
 
-        // --- 2. MODO SINGLE PLAYER ---
-        // Se chegámos aqui, é porque não estamos no Multiplayer (ou RoomManager não existe)
-        Debug.Log("Modo Single Player detetado.");
+            if (manager != null)
+            {
+                // Avisa o Manager (Ele decide Respawn ou Game Over)
+                manager.HandleMyDeath();
+            }
+            else
+            {
+                Debug.LogError("ERRO CRÍTICO: RoomManager não encontrado! Impossível fazer respawn.");
+            }
 
-        // Tenta encontrar o Menu de Morte na cena e ativá-lo
-        DeathMenu dm = FindObjectOfType<DeathMenu>();
-        if (dm != null)
-        {
-            dm.Show(); // Mostra o painel "You Died"
-        }
-        else
-        {
-            Debug.LogWarning("DeathMenu não encontrado na cena Single Player!");
-        }
+            // Atualiza Stats no Photon
+            UpdateDeathStats();
 
-        // Destrói o boneco localmente
-        Destroy(gameObject);
+            // Notifica Atacante
+            if (attackerViewID != -1)
+            {
+                PhotonView attackerView = PhotonView.Find(attackerViewID);
+                if (attackerView != null) attackerView.RPC("KillConfirmed", attackerView.Owner);
+            }
+
+            // Destrói na rede
+            PhotonNetwork.Destroy(gameObject);
+        }
     }
 
-    private void UpdatePhotonStats(int attackerViewID)
+    private void UpdateDeathStats()
     {
-        // Atualiza as minhas mortes
         int currentDeaths = 0;
         if (view.Owner.CustomProperties.ContainsKey("Deaths"))
             currentDeaths = (int)view.Owner.CustomProperties["Deaths"];
 
         Hashtable props = new Hashtable { { "Deaths", currentDeaths + 1 } };
         view.Owner.SetCustomProperties(props);
-
-        // Atualiza as kills do atacante
-        if (attackerViewID != -1)
-        {
-            PhotonView attackerView = PhotonView.Find(attackerViewID);
-            if (attackerView != null) attackerView.RPC("KillConfirmed", attackerView.Owner);
-        }
     }
 
-    // --- CURA E UI ---
+    // ---------------------------------------------------------------------------------
+    // --- 4. CURA E UI ---
+    // ---------------------------------------------------------------------------------
+
     [PunRPC]
-    public void Heal(int amount) { if (!isDead) { health = Mathf.Clamp(health + amount, 0, maxHealth); UpdateHealthUI(); } }
+    public void Heal(int amount)
+    {
+        if (isDead) return;
+        health = Mathf.Clamp(health + amount, 0, maxHealth);
+        UpdateHealthUI();
+    }
 
     private void UpdateHealthUI()
     {

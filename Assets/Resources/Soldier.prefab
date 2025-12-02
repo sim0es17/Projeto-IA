@@ -219,11 +219,6 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 8
   isKnockedBack: 0
-  stompForce: 12
-  stompDamage: 15
-  enemyTag: Enemy
-  minStompNormalY: 0.7
-  speedIconAnimator: {fileID: 0}
 --- !u!114 &3548697139772030856
 MonoBehaviour:
   m_ObjectHideFlags: 0
