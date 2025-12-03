@@ -458,7 +458,7 @@ MonoBehaviour:
   countdownText: {fileID: 2075933454}
   playerListText: {fileID: 594993389}
   startGameButton: {fileID: 908620828}
-  gameChatObject: {fileID: 0}
+  gameChatObject: {fileID: 566417561}
 --- !u!4 &156769602
 Transform:
   m_ObjectHideFlags: 0
@@ -1952,6 +1952,11 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: a98a376fd915cbc49b4c8df582787856, type: 3}
+--- !u!1 &566417561 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 7603272609764651831, guid: a98a376fd915cbc49b4c8df582787856, type: 3}
+  m_PrefabInstance: {fileID: 566417560}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &571687580
 GameObject:
   m_ObjectHideFlags: 0

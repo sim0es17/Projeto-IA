@@ -5095,7 +5095,7 @@ MonoBehaviour:
   countdownText: {fileID: 1282447432}
   playerListText: {fileID: 1381320678}
   startGameButton: {fileID: 1914707497}
-  gameChatPrefab: {fileID: 6899345376298166558}
+  gameChatObject: {fileID: 6899345376298166558}
 --- !u!4 &1519927154
 Transform:
   m_ObjectHideFlags: 0
@@ -7297,6 +7297,10 @@ PrefabInstance:
     - target: {fileID: 7603272609764651831, guid: a98a376fd915cbc49b4c8df582787856, type: 3}
       propertyPath: m_Name
       value: GameChat
+      objectReference: {fileID: 0}
+    - target: {fileID: 7603272609764651831, guid: a98a376fd915cbc49b4c8df582787856, type: 3}
+      propertyPath: m_IsActive
+      value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
