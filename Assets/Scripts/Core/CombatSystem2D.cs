@@ -45,7 +45,7 @@ public class CombatSystem2D : MonoBehaviourPunCallbacks
     
     // Variáveis para o carregamento e animação
     private float chargeStartTime = 0f;
-    [HideInInspector] public bool isCharging = false; // TORNADO PÚBLICO (mas escondido) para o Movement2D aceder
+    [HideInInspector] public bool isCharging = false; // Torna o estado de carregamento acessível pelo Movement2D
     
     // Referência do GameChat para verificar o estado
     private GameChat chatInstance;
@@ -54,6 +54,7 @@ public class CombatSystem2D : MonoBehaviourPunCallbacks
     {
         photonView = GetComponent<PhotonView>();
         
+        // Desativa o script se não for o jogador local em Multiplayer
         if (photonView != null && !photonView.IsMine)
         {
             enabled = false;
@@ -63,9 +64,10 @@ public class CombatSystem2D : MonoBehaviourPunCallbacks
     void Start()
     {
         anim = GetComponent<Animator>();
+        // Assume que GameChat.instance existe ou será encontrado
         chatInstance = GameChat.instance;
 
-        // Lógica de procura de UI (Útil para prefabs)
+        // Lógica de procura de UI
         if (defenseIcon == null || defenseText == null)
         {
             Canvas canvas = GetComponentInChildren<Canvas>();
@@ -89,6 +91,7 @@ public class CombatSystem2D : MonoBehaviourPunCallbacks
         // 2. BLOQUEIO POR ESTADO DE JOGO (LOBBY, PAUSA, CHAT)
         // ----------------------------------------------------
         
+        // Assume-se que PMMM e LobbyManager existem globalmente
         bool isChatActive = (chatInstance != null && chatInstance.IsChatOpen);
         bool isPaused = PMMM.IsPausedLocally; 
         bool lobbyBlocking = (LobbyManager.instance != null && !LobbyManager.GameStartedAndPlayerCanMove);
@@ -176,7 +179,7 @@ public class CombatSystem2D : MonoBehaviourPunCallbacks
             }
         }
 
-        // LÓGICA DE DEFESA (Mouse 1) - MANTIDA
+        // LÓGICA DE DEFESA (Mouse 1)
         if (Input.GetMouseButtonDown(1) && Time.time >= nextDefenseTime && !isDefending && !isCharging)
         {
             if (photonView != null && PhotonNetwork.InRoom)
