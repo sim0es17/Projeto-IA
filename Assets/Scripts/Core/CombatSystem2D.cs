@@ -21,8 +21,7 @@ public class CombatSystem2D : MonoBehaviourPunCallbacks
     [Header("Ataque Carregado")]
     public int chargedDamageMultiplier = 2;  // Multiplicador do dano base (ex: 10 * 2 = 20)
     public float chargeTime = 1f;            // Tempo necessário para carregar o ataque
-    public int attackAnimLayer = 0;          // Layer do Animator para o ataque
-
+    
     [Header("Defesa")]
     public float defenseCooldown = 2f;
     [HideInInspector] public bool isDefending = false;
@@ -46,7 +45,7 @@ public class CombatSystem2D : MonoBehaviourPunCallbacks
     
     // Variáveis para o carregamento e animação
     private float chargeStartTime = 0f;
-    private bool isCharging = false;
+    [HideInInspector] public bool isCharging = false; // TORNADO PÚBLICO (mas escondido) para o Movement2D aceder
     
     // Referência do GameChat para verificar o estado
     private GameChat chatInstance;
@@ -55,7 +54,6 @@ public class CombatSystem2D : MonoBehaviourPunCallbacks
     {
         photonView = GetComponent<PhotonView>();
         
-        // O script só deve rodar no jogador local para gerir os inputs.
         if (photonView != null && !photonView.IsMine)
         {
             enabled = false;
@@ -65,7 +63,6 @@ public class CombatSystem2D : MonoBehaviourPunCallbacks
     void Start()
     {
         anim = GetComponent<Animator>();
-        // Tenta obter a referência do Singleton do chat, se existir.
         chatInstance = GameChat.instance;
 
         // Lógica de procura de UI (Útil para prefabs)
@@ -214,8 +211,6 @@ public class CombatSystem2D : MonoBehaviourPunCallbacks
     [PunRPC]
     void SetAttackState(bool state, float animSpeed)
     {
-        // Executado em todos os clientes para sincronizar o estado da animação
-
         if (anim)
         {
             // O parâmetro "IsAttacking" será um Bool no Animator
@@ -323,9 +318,8 @@ public class CombatSystem2D : MonoBehaviourPunCallbacks
         }
     }
 
-    // --- Métodos de Suporte (UI, Kills, VFX e Defesa) ---
+    // --- Métodos de Suporte ---
 
-    // Implementação do método de UI - MANTIDA
     private void UpdateDefenseUI()
     {
         if (defenseIcon == null && defenseText == null) return;
@@ -364,7 +358,6 @@ public class CombatSystem2D : MonoBehaviourPunCallbacks
     [PunRPC]
     public void KillConfirmed()
     {
-        // Lógica de kills é tipicamente Multiplayer - MANTIDA
         if (photonView != null && !photonView.IsMine) return;
 
         if (photonView != null && PhotonNetwork.InRoom)
@@ -383,7 +376,6 @@ public class CombatSystem2D : MonoBehaviourPunCallbacks
 
     private IEnumerator DestroyVFX(GameObject vfx, float delay)
     {
-        // Corrotina para destruir o VFX - MANTIDA
         yield return new WaitForSeconds(delay);
         if (vfx == null) yield break;
 
@@ -402,7 +394,6 @@ public class CombatSystem2D : MonoBehaviourPunCallbacks
     [PunRPC]
     void SetDefenseState(bool state)
     {
-        // Executado em todos os clientes para sincronizar o estado - MANTIDA
         isDefending = state;
 
         if (anim)
@@ -413,7 +404,6 @@ public class CombatSystem2D : MonoBehaviourPunCallbacks
 
     void OnDrawGizmosSelected()
     {
-        // Desenha o raio de ataque - MANTIDO
         if (attackPoint == null) return;
         Gizmos.color = Color.red;
         Gizmos.DrawWireSphere(attackPoint.position, attackRange);

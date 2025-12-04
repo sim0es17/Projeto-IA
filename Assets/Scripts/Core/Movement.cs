@@ -37,7 +37,7 @@ public class Movement2D : MonoBehaviourPunCallbacks
     private bool sprinting;
     private bool grounded;
     private int jumpCount;
-    private CombatSystem2D combatSystem;
+    private CombatSystem2D combatSystem; // Referência ao CombatSystem2D
     private Animator anim;
     private SpriteRenderer spriteRenderer;
     private PhotonView pv;
@@ -53,15 +53,11 @@ public class Movement2D : MonoBehaviourPunCallbacks
         spriteRenderer = GetComponent<SpriteRenderer>();
         pv = GetComponent<PhotonView>();
 
-        // Corrigido: Para usar o Singleton, é melhor usar GameChat.instance se for um Singleton
-        // ou FindObjectOfType se não tiver a certeza de quando foi instanciado.
         chatInstance = GameChat.instance; 
         if (chatInstance == null)
         {
-            // Se o Singleton ainda não existir, tenta encontrar na cena (caso o GameChat seja instanciado mais tarde)
             chatInstance = FindObjectOfType<GameChat>();
         }
-
 
         // 1. GUARDAR OS VALORES ORIGINAIS (Base para Reset)
         defaultWalkSpeed = walkSpeed;
@@ -86,10 +82,8 @@ public class Movement2D : MonoBehaviourPunCallbacks
         isKnockedBack = state;
     }
 
-    // ----------------------------------------------------
-    // --- MÉTODOS DO POWER UP (MULTIPLAYER - RPC) ---
-    // ----------------------------------------------------
-
+    // --- MÉTODOS DO POWER UP (O resto dos métodos de Buff/Reset são mantidos) ---
+    
     [PunRPC]
     public void BoostSpeed(float boostAmount, float duration)
     {
@@ -113,10 +107,6 @@ public class Movement2D : MonoBehaviourPunCallbacks
         ResetStats();
         currentBuffRoutine = null;
     }
-
-    // ----------------------------------------------------
-    // --- MÉTODOS DO POWER UP (SINGLE PLAYER - LEGACY) ---
-    // ----------------------------------------------------
     
     public void ActivateSpeedJumpBuff(float speedMultiplier, float jumpMultiplier, float duration)
     {
@@ -167,11 +157,16 @@ public class Movement2D : MonoBehaviourPunCallbacks
         // --- GATHER BLOCKING STATES ---
         bool isDefending = (combatSystem != null && combatSystem.isDefending);
         
+        // NOVO: Verifica se o ataque está a ser carregado (usando o bool público do CombatSystem)
+        bool isChargingAttack = (combatSystem != null && combatSystem.isCharging);
+        
+        // Define o estado de Bloqueio de Movimento (Defesa OU Carregamento)
+        bool isMovementBlocked = isDefending || isChargingAttack; 
+
         // 1. CHAT BLOQUEIO
         bool isChatOpen = (chatInstance != null && chatInstance.IsChatOpen);
         
-        // 2. PAUSA BLOQUEIO (Assume-se a utilização de uma flag estática no PMMM)
-        // Se o PMMM existir e a pausa local estiver ativa.
+        // 2. PAUSA BLOQUEIO 
         bool isPaused = PMMM.IsPausedLocally; 
         
         // 3. LOBBY BLOQUEIO
@@ -187,11 +182,12 @@ public class Movement2D : MonoBehaviourPunCallbacks
         }
 
         // ==========================================================
-        // BLOQUEIOS (CHAT, PAUSA, LOBBY, DEFESA)
+        // BLOQUEIOS (CHAT, PAUSA, LOBBY, DEFESA, CARREGAMENTO)
         // ==========================================================
-        if (lobbyBlocking || isPaused || isChatOpen || isDefending)
+        // Se houver qualquer bloqueio, forçamos a paragem horizontal e redefinimos a animação de velocidade.
+        if (lobbyBlocking || isPaused || isChatOpen || isMovementBlocked)
         {
-            // O jogador é forçado a parar horizontalmente
+            // O jogador é forçado a parar horizontalmente (mantendo a velocidade vertical)
             if (rb != null) rb.linearVelocity = new Vector2(0f, rb.linearVelocity.y);
 
             if (anim)
@@ -200,7 +196,7 @@ public class Movement2D : MonoBehaviourPunCallbacks
                 anim.SetBool("IsSprinting", false);
             }
 
-            // Se for Bloqueio Total (Chat/Pausa/Lobby), bloqueia TODO o input (incluindo salto)
+            // Se for Bloqueio Total (Chat/Pausa/Lobby), bloqueia TODO o input (incluindo salto e o resto do Update)
             if (lobbyBlocking || isPaused || isChatOpen)
             {
                 if (anim) anim.SetBool("Grounded", grounded);
@@ -212,7 +208,7 @@ public class Movement2D : MonoBehaviourPunCallbacks
         // INPUT DE MOVIMENTO (Só é processado se não houver Bloqueio Total)
         // ----------------------------------------------------------------
 
-        // RESET SALTO (É feito antes, pois o salto é permitido durante a defesa)
+        // RESET SALTO
         if (rb != null)
         {
             if (grounded && Mathf.Abs(rb.linearVelocity.y) <= 0.1f)
@@ -226,9 +222,9 @@ public class Movement2D : MonoBehaviourPunCallbacks
             }
         }
 
-        // INPUT HORIZONTAL (Bloqueado se isDefending=true)
+        // INPUT HORIZONTAL (Bloqueado se isMovementBlocked=true)
         float move = 0f;
-        if (!isDefending)
+        if (!isMovementBlocked)
         {
             move = Input.GetAxisRaw("Horizontal");
             sprinting = Input.GetKey(KeyCode.LeftShift);
@@ -250,32 +246,34 @@ public class Movement2D : MonoBehaviourPunCallbacks
             }
         }
         
-        // SALTO (Permitido mesmo durante a defesa, mas não durante o Bloqueio Total)
+        // SALTO (Bloqueado se isMovementBlocked=true)
         bool jumpInput = Input.GetKeyDown(KeyCode.W) || Input.GetButtonDown("Jump");
 
-        if (jumpInput && jumpCount < maxJumps)
+        if (jumpInput && jumpCount < maxJumps && !isMovementBlocked) 
         {
             // Resetar a velocidade vertical antes de aplicar a nova força de pulo para consistência
             rb.linearVelocity = new Vector2(rb.linearVelocity.x, jumpForce);
             jumpCount++;
         }
 
-        // FLIP SPRITE
+        // FLIP SPRITE (Permite mudar a direção (flip) mesmo que o movimento esteja bloqueado)
         if (spriteRenderer != null)
         {
-            // Usa o 'move' calculado, mesmo que seja 0 (forçado a parar)
-            if (move > 0.05f) spriteRenderer.flipX = false;
-            else if (move < -0.05f) spriteRenderer.flipX = true;
+            float directionInput = Input.GetAxisRaw("Horizontal"); 
+
+            // Prioriza o flip apenas se o input de direção for dado
+            if (directionInput > 0.05f) spriteRenderer.flipX = false;
+            else if (directionInput < -0.05f) spriteRenderer.flipX = true;
         }
 
         // ANIMATOR
         if (anim)
         {
-            // Se estiver a defender, Speed é 0. Caso contrário, usa o valor de move.
-            anim.SetFloat("Speed", isDefending ? 0f : Mathf.Abs(move)); 
+            // Se o movimento estiver bloqueado (defesa OU carregamento), Speed é 0. Caso contrário, usa o valor de move.
+            anim.SetFloat("Speed", isMovementBlocked ? 0f : Mathf.Abs(move)); 
             anim.SetBool("Grounded", grounded);
-            // Sprint só se não estiver a defender E houver movimento
-            bool isSprintAnim = !isDefending && sprinting && Mathf.Abs(move) > 0.05f; 
+            // Sprint só se não houver bloqueio E houver movimento
+            bool isSprintAnim = !isMovementBlocked && sprinting && Mathf.Abs(move) > 0.05f; 
             anim.SetBool("IsSprinting", isSprintAnim);
         }
     }
