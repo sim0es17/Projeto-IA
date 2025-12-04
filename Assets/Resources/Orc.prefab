@@ -239,7 +239,7 @@ BoxCollider2D:
   m_UsedByEffector: 0
   m_CompositeOperation: 0
   m_CompositeOrder: 0
-  m_Offset: {x: 0, y: 0}
+  m_Offset: {x: -0.00087697804, y: 0}
   m_SpriteTilingProperty:
     border: {x: 0, y: 0, z: 0, w: 0}
     pivot: {x: 0.5, y: 0.5}
@@ -249,7 +249,7 @@ BoxCollider2D:
     drawMode: 0
     adaptiveTiling: 0
   m_AutoTiling: 0
-  m_Size: {x: 0.18952695, y: 0.1513567}
+  m_Size: {x: 0.22058946, y: 0.1513567}
   m_EdgeRadius: 0
 --- !u!114 &5603403426617342866
 MonoBehaviour:
@@ -286,12 +286,15 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   damage: 10
-  attackRange: 1
+  attackRange: 1.33
   attackCooldown: 0.5
   attackPoint: {fileID: 1155275024724574856}
   enemyLayers:
     serializedVersion: 2
     m_Bits: 128
+  chargedDamageMultiplier: 2
+  chargeTime: 1
+  attackAnimLayer: 0
   defenseCooldown: 2
   isDefending: 0
   pvpKnockbackForce: 5
@@ -700,7 +703,7 @@ Transform:
   m_GameObject: {fileID: 3628230557614382467}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0.064, y: 0, z: 0}
+  m_LocalPosition: {x: 0.001, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
