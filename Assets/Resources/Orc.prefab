@@ -294,7 +294,6 @@ MonoBehaviour:
     m_Bits: 128
   chargedDamageMultiplier: 2
   chargeTime: 1
-  attackAnimLayer: 0
   defenseCooldown: 2
   isDefending: 0
   pvpKnockbackForce: 5
@@ -302,6 +301,7 @@ MonoBehaviour:
   hitVFX: {fileID: 9081207694187098227, guid: a14c85ec1b7dde140924e194f58c2f0b, type: 3}
   defenseIcon: {fileID: 0}
   defenseText: {fileID: 0}
+  isCharging: 0
 --- !u!114 &245647368185658279
 MonoBehaviour:
   m_ObjectHideFlags: 0
