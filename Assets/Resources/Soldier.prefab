@@ -244,7 +244,7 @@ MonoBehaviour:
   isDefending: 0
   pvpKnockbackForce: 5
   pvpKnockbackDuration: 0.2
-  hitVFX: {fileID: 9081207694187098227, guid: a14c85ec1b7dde140924e194f58c2f0b, type: 3}
+  hitVFX: {fileID: 0}
   defenseIcon: {fileID: 0}
   defenseText: {fileID: 0}
   isCharging: 0
