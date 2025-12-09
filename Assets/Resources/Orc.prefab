@@ -286,7 +286,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   damage: 10
-  attackRange: 1.33
+  attackRange: 2
   attackCooldown: 0.5
   attackPoint: {fileID: 1155275024724574856}
   enemyLayers:
