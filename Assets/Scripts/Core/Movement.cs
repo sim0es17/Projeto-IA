@@ -12,6 +12,8 @@ public class Movement2D : MonoBehaviourPunCallbacks
     [Header("Pulo")]
     public float jumpForce = 10f;
     public int maxJumps = 2;
+    // NOVO: Prefab do VFX de Salto (Arrastar aqui no Inspector)
+    public GameObject jumpVFXPrefab; 
 
     [Header("Ground Check")]
     public Transform groundCheck;
@@ -142,6 +144,33 @@ public class Movement2D : MonoBehaviourPunCallbacks
         jumpForce = defaultJumpForce;
     }
 
+    // NOVO MÉTODO: Criação do VFX de Salto
+    private void SpawnJumpVFX()
+    {
+        if (pv != null && pv.IsMine)
+        {
+            // Chamamos a RPC para que todos os clientes vejam o efeito
+            pv.RPC("SpawnJumpVFX_RPC", RpcTarget.All);
+        }
+    }
+
+    // NOVA RPC: Executada em todos os clientes
+    [PunRPC]
+    private void SpawnJumpVFX_RPC()
+    {
+        if (jumpVFXPrefab != null && groundCheck != null)
+        {
+            // Instanciar o VFX na posição do Ground Check (onde o salto ocorre)
+            GameObject vfx = Instantiate(jumpVFXPrefab, groundCheck.position, Quaternion.identity);
+            
+            // Opcional: Destruir o VFX após 2 segundos (ajuste conforme a duração do seu Particle System)
+            Destroy(vfx, 2f); 
+        }
+        else
+        {
+            Debug.LogWarning("Jump VFX Prefab ou GroundCheck não atribuído! Não foi possível spawnar o VFX.");
+        }
+    }
     // ----------------------------------------------------
 
     void Update()
@@ -254,6 +283,9 @@ public class Movement2D : MonoBehaviourPunCallbacks
             // Resetar a velocidade vertical antes de aplicar a nova força de pulo para consistência
             rb.linearVelocity = new Vector2(rb.linearVelocity.x, jumpForce);
             jumpCount++;
+
+            // NOVO: CHAMA O VFX DE SALTO
+            SpawnJumpVFX();
         }
 
         // FLIP SPRITE (Permite mudar a direção (flip) mesmo que o movimento esteja bloqueado)

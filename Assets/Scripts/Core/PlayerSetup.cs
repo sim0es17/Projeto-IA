@@ -11,13 +11,14 @@ public class PlayerSetup : MonoBehaviourPunCallbacks, IPunObservable
     public CombatSystem2D combat;
 
     [Header("UI")]
-    public string nickname;
+    // Este é o TextMeshPro que deve estar anexado ACIMA DA CABEÇA do prefab do jogador
     public TextMeshPro nicknameText;
 
     // Referências Privadas
     private SpriteRenderer spriteRenderer;
     private PhotonView photonView;
     private Animator anim;
+    private string currentNickname = "Player"; // Novo campo privado para guardar o nome
 
     // Variáveis de Sincronização
     private float syncSpeed;
@@ -34,15 +35,29 @@ public class PlayerSetup : MonoBehaviourPunCallbacks, IPunObservable
 
     void Start()
     {
-        // Se for o meu boneco...
+        // Se for o meu boneco (o que eu controlo)...
         if (photonView.IsMine)
         {
-            // Chamamos a configuração local
             IsLocalPlayer();
+            
+            // =========================================================================
+            // PASSO CHAVE: Envia o nome de rede (que vem do RoomManager) para todos
+            // RpcTarget.AllBuffered garante que quem entrar depois também receba o nome.
+            // =========================================================================
+            currentNickname = PhotonNetwork.LocalPlayer.NickName;
+            
+            // Certifique-se de que o nome não é nulo/vazio antes de enviar o RPC
+            if (string.IsNullOrEmpty(currentNickname))
+            {
+                currentNickname = "Jogador_" + photonView.OwnerActorNr;
+            }
+            
+            photonView.RPC("SetNickname", RpcTarget.AllBuffered, currentNickname);
         }
         else // Se for boneco de outro jogador...
         {
             DisableRemotePlayer();
+            // Para jogadores remotos, o nome será definido quando o RPC for recebido.
         }
     }
 
@@ -57,20 +72,11 @@ public class PlayerSetup : MonoBehaviourPunCallbacks, IPunObservable
         // ATIVAÇÃO DA CÂMARA
         if (camara != null)
         {
-            Debug.Log("[PlayerSetup] A ativar Câmara do Jogador.");
             camara.SetActive(true);
-
-            // Garante que o AudioListener está ligado para ouvires o jogo
             AudioListener listener = camara.GetComponent<AudioListener>();
             if (listener != null) listener.enabled = true;
-
-            // Zoom Dinâmico
             var zoomDynamic = camara.GetComponent<CameraDynamicZoom>();
             if (zoomDynamic != null) zoomDynamic.enabled = true;
-        }
-        else
-        {
-            Debug.LogError("[PlayerSetup] ERRO CRÍTICO: A variável 'camara' não está associada no Inspector do Prefab!");
         }
     }
 
@@ -84,19 +90,18 @@ public class PlayerSetup : MonoBehaviourPunCallbacks, IPunObservable
         if (camara != null)
         {
             camara.SetActive(false);
-
-            // Desliga também o AudioListener dos outros para não ouvires o mundo da posição deles
             AudioListener listener = camara.GetComponent<AudioListener>();
             if (listener != null) listener.enabled = false;
         }
     }
 
-    // --- SINCRONIZAÇÃO (Mantive igual ao teu, está correto) ---
+    // --- SINCRONIZAÇÃO DE ANIMAÇÕES E DADOS (CORRETO) ---
 
     void Update()
     {
         if (!photonView.IsMine)
         {
+            // Lógica de interpolação e sincronização para jogadores remotos
             if (anim)
             {
                 anim.SetFloat("Speed", syncSpeed);
@@ -133,10 +138,28 @@ public class PlayerSetup : MonoBehaviourPunCallbacks, IPunObservable
         }
     }
 
+    // =========================================================================
+    // RPC: Recebe o nome de todos os clientes e define o texto acima da cabeça
+    // =========================================================================
     [PunRPC]
     public void SetNickname(string _nickname)
     {
-        nickname = _nickname;
-        if (nicknameText != null) nicknameText.text = nickname;
+        currentNickname = _nickname;
+        if (nicknameText != null) 
+        {
+            nicknameText.text = currentNickname;
+            
+            // Verifica se este objeto de jogador pertence ao cliente local (EU)
+            if (photonView.IsMine)
+            {
+                // JOGADOR LOCAL: Cor Verde
+                nicknameText.color = Color.green; 
+            }
+            else
+            {
+                // JOGADOR REMOTO (Oponente): Cor Vermelha
+                nicknameText.color = Color.red;
+            }
+        }
     }
 }

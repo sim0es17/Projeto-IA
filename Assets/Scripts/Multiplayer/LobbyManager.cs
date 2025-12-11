@@ -61,6 +61,7 @@ public class LobbyManager : MonoBehaviourPunCallbacks
 
         UpdateCountdownUI(remainingTime);
 
+        // Apenas o Master Client inicia o jogo quando o tempo acaba
         if (PhotonNetwork.IsMasterClient && remainingTime <= 0.01f && startTime > 0)
         {
             StartGame();
@@ -71,6 +72,7 @@ public class LobbyManager : MonoBehaviourPunCallbacks
     {
         if (lobbyPanel == null) return;
 
+        // Se o jogo já começou na sala (propriedade "gs"), pula o lobby
         if (PhotonNetwork.CurrentRoom.CustomProperties.ContainsKey(CustomRoomProperties.GameStarted) &&
             (bool)PhotonNetwork.CurrentRoom.CustomProperties[CustomRoomProperties.GameStarted])
         {
@@ -78,13 +80,11 @@ public class LobbyManager : MonoBehaviourPunCallbacks
             return;
         }
 
-        // --- INÍCIO DA MUDANÇA ---
-        // Desativa a tela de Name Screen (nameUI) quando o Lobby Panel é ativado.
+        // DESATIVA A TELA DE NOME (NameScreen) ao entrar no Lobby
         if (RoomManager.instance != null && RoomManager.instance.nameUI != null)
         {
             RoomManager.instance.nameUI.SetActive(false);
         }
-        // --- FIM DA MUDANÇA ---
 
         lobbyPanel.SetActive(true);
         
@@ -92,7 +92,9 @@ public class LobbyManager : MonoBehaviourPunCallbacks
         ToggleChatVisibility(true); 
 
         if (PhotonNetwork.IsMasterClient) CheckStartConditions();
-        UpdateLobbyUI();
+        
+        // CHAMA O UPDATE PARA EXIBIR O NICKNAME (definido no RoomManager)
+        UpdateLobbyUI(); 
         UpdateCountdownUI(remainingTime);
     }
 
@@ -109,11 +111,19 @@ public class LobbyManager : MonoBehaviourPunCallbacks
         if (PhotonNetwork.IsMasterClient) CheckStartConditions();
         UpdateLobbyUI();
     }
+    
+    // Este override garante que o nome do jogador atualiza para todos se ele mudar
+    public override void OnPlayerPropertiesUpdate(Player targetPlayer, Hashtable changedProps)
+    {
+        // Se o Photon NickName for alterado por qualquer motivo (raro), atualiza o lobby
+        UpdateLobbyUI(); 
+    }
 
     public override void OnRoomPropertiesUpdate(Hashtable propertiesThatChanged)
     {
         base.OnRoomPropertiesUpdate(propertiesThatChanged);
 
+        // Se a propriedade de Jogo Iniciado for alterada para TRUE
         if (propertiesThatChanged.ContainsKey(CustomRoomProperties.GameStarted))
         {
             if ((bool)propertiesThatChanged[CustomRoomProperties.GameStarted])
@@ -123,6 +133,7 @@ public class LobbyManager : MonoBehaviourPunCallbacks
             }
         }
 
+        // Se a propriedade de StartTime for alterada (iniciando/parando contagem regressiva)
         if (!hasGameStartedLocally && propertiesThatChanged.ContainsKey(CustomRoomProperties.StartTime))
         {
             object stValue = propertiesThatChanged[CustomRoomProperties.StartTime];
@@ -135,6 +146,7 @@ public class LobbyManager : MonoBehaviourPunCallbacks
                 if (PhotonNetwork.CurrentRoom.PlayerCount >= MAX_PLAYERS) countdownDuration = WAIT_TIME_FULL_ROOM;
                 else if (PhotonNetwork.CurrentRoom.PlayerCount >= 2) countdownDuration = WAIT_TIME_FOR_SECOND_PLAYER;
 
+                // Calcula o tempo restante baseado no tempo de rede
                 double elapsed = PhotonNetwork.Time - startTime;
                 elapsed = System.Math.Max(0.0, elapsed);
                 remainingTime = Mathf.Max(0f, countdownDuration - (float)elapsed);
@@ -187,7 +199,8 @@ public class LobbyManager : MonoBehaviourPunCallbacks
         if (isCountingDown)
         {
             isCountingDown = false;
-            Hashtable props = new Hashtable { { CustomRoomProperties.StartTime, null } };
+            // Define a propriedade para nulo para sinalizar a parada
+            Hashtable props = new Hashtable { { CustomRoomProperties.StartTime, null } }; 
             PhotonNetwork.CurrentRoom.SetCustomProperties(props);
             startTime = 0;
             remainingTime = 0f;
@@ -202,9 +215,12 @@ public class LobbyManager : MonoBehaviourPunCallbacks
     private void StartGame()
     {
         if (!PhotonNetwork.IsMasterClient) return;
+        
+        // Verifica se o jogo já está marcado como iniciado
         if (PhotonNetwork.CurrentRoom.CustomProperties.ContainsKey(CustomRoomProperties.GameStarted) &&
             (bool)PhotonNetwork.CurrentRoom.CustomProperties[CustomRoomProperties.GameStarted]) return;
 
+        // Define a propriedade de sala para True (inicia o jogo para todos)
         isCountingDown = false;
         Hashtable props = new Hashtable { { CustomRoomProperties.GameStarted, true } };
         PhotonNetwork.CurrentRoom.SetCustomProperties(props);
@@ -235,6 +251,7 @@ public class LobbyManager : MonoBehaviourPunCallbacks
             Debug.LogError("RoomManager não encontrado! Impossível iniciar o jogo.");
         }
 
+        // Trava a sala para novos jogadores
         if (PhotonNetwork.IsMasterClient) PhotonNetwork.CurrentRoom.IsOpen = false;
 
         Debug.Log("[Lobby] Jogo iniciado localmente.");
@@ -254,11 +271,16 @@ public class LobbyManager : MonoBehaviourPunCallbacks
         if (!PhotonNetwork.InRoom) return;
         if (playerListText == null) return;
 
-        string players = $"Jogadores na Sala ({PhotonNetwork.CurrentRoom.PlayerCount}/{MAX_PLAYERS}):\n";
+        string players = $"Players in the Room ({PhotonNetwork.CurrentRoom.PlayerCount}/{MAX_PLAYERS}):\n";
         foreach (Player p in PhotonNetwork.CurrentRoom.Players.Values)
         {
+            // O nome vem do PhotonNetwork.NickName, definido no RoomManager
             string nick = string.IsNullOrEmpty(p.NickName) ? $"Player {p.ActorNumber}" : p.NickName;
-            players += $"- **{nick}** {(p.IsMasterClient ? "(Host)" : "")}\n";
+            
+            // Adicionamos um indicador para o próprio jogador (você) para ser mais claro
+            bool isLocal = p.IsLocal;
+            
+            players += $"- {nick} {(p.IsMasterClient ? "(Host)" : "")}{(isLocal ? " (You)" : "")}\n";
         }
         playerListText.text = players;
 
@@ -275,8 +297,8 @@ public class LobbyManager : MonoBehaviourPunCallbacks
 
         if (!isCountingDown || time <= 0)
         {
-            if (PhotonNetwork.CurrentRoom.PlayerCount < 2) countdownText.text = $"Aguardando 1º jogador...\n(Mínimo de 2 para começar)";
-            else countdownText.text = $"Partida em espera. Contagem parada.";
+            if (PhotonNetwork.CurrentRoom.PlayerCount < 2) countdownText.text = $"Waiting for 2nd player...\n(Minimum 2 to start)";
+            else countdownText.text = $"Departure on hold. Counting stopped.";
             return;
         }
 
@@ -284,7 +306,7 @@ public class LobbyManager : MonoBehaviourPunCallbacks
         int seconds = Mathf.FloorToInt(time % 60f);
         string timeString = string.Format("{0:00}:{1:00}", minutes, seconds);
 
-        if (PhotonNetwork.CurrentRoom.PlayerCount >= MAX_PLAYERS) countdownText.text = $"SALA CHEIA! Início em: \n**{timeString}**";
-        else countdownText.text = $"Início da Partida em: \n**{timeString}**";
+        if (PhotonNetwork.CurrentRoom.PlayerCount >= MAX_PLAYERS) countdownText.text = $"FULL ROOM! Start in: \n{timeString}";
+        else countdownText.text = $"Start of the Match in: \n{timeString}";
     }
 }

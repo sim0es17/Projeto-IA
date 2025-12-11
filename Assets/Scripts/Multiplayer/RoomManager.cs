@@ -5,7 +5,7 @@ using Photon.Realtime;
 using UnityEngine.SceneManagement;
 using Photon.Pun.UtilityScripts;
 using System.Collections;
-using TMPro; // Caso estejas a usar TextMeshPro nalguma UI aqui
+using TMPro; 
 
 public class RoomManager : MonoBehaviourPunCallbacks
 {
@@ -18,12 +18,10 @@ public class RoomManager : MonoBehaviourPunCallbacks
     private string sceneToLoadOnLeave = "";
 
     [Header("Player and Spawn")]
-    public GameObject player; // (Opcional, visto que usamos Resources)
+    public GameObject player;
     public Transform[] spawnPoints;
 
     [Header("UI References")]
-    // IMPORTANTE: Coloca esta Câmara como FILHA (Child) do objeto RoomManager na hierarquia
-    // para ela não se perder quando mudas de cena.
     public GameObject roomCam;
     public GameObject nameUI;
     public GameObject connectigUI;
@@ -33,7 +31,7 @@ public class RoomManager : MonoBehaviourPunCallbacks
 
     [Header("Room Info")]
     public string mapName = "Noname";
-    private string nickName = "Nameless";
+    private string nickName = "Nameless"; // Variável local que guarda o nome do input da UI
 
     public bool IsNamePanelActive => nameUI != null && nameUI.activeSelf;
 
@@ -49,6 +47,7 @@ public class RoomManager : MonoBehaviourPunCallbacks
         DontDestroyOnLoad(this.gameObject);
     }
 
+    // Chamado pelo campo de Input da UI (EndEdit ou ValueChange)
     public void ChangeNickName(string _name) { nickName = _name; }
 
     // --- CONEXÃO ---
@@ -65,6 +64,20 @@ public class RoomManager : MonoBehaviourPunCallbacks
 
     public void JoinRoomButtonPressed()
     {
+        // Se o nome não foi digitado, podemos definir um padrão ou avisar
+        if (string.IsNullOrEmpty(nickName) || nickName == "Nameless")
+        {
+             Debug.LogWarning("Por favor, digite um nome antes de entrar.");
+             // Pode adicionar aqui lógica para vibrar ou destacar o campo de input
+             return;
+        }
+
+        // =========================================================================
+        // CÓDIGO CHAVE: DEFINE O NICKNAME ANTES DE QUALQUER TENTATIVA DE CONEXÃO/ENTRADA
+        // Garante que o nome digitado na UI está na propriedade de rede.
+        PhotonNetwork.NickName = nickName;
+        // =========================================================================
+
         if (PhotonNetwork.IsConnectedAndReady) JoinRoomLogic();
         else ConnectToMaster();
     }
@@ -94,7 +107,20 @@ public class RoomManager : MonoBehaviourPunCallbacks
     }
 
     // --- CALLBACKS PHOTON ---
-    public override void OnConnectedToMaster() { JoinRoomLogic(); }
+    public override void OnConnectedToMaster() 
+    { 
+        // =========================================================================
+        // CÓDIGO DE SEGURANÇA: Se o nome não foi definido antes (via JoinRoomButtonPressed),
+        // garante que ele seja definido aqui antes de entrar no lobby.
+        if (!string.IsNullOrEmpty(nickName) && PhotonNetwork.NickName != nickName) 
+        {
+            PhotonNetwork.NickName = nickName;
+        }
+        // =========================================================================
+        
+        JoinRoomLogic(); 
+    }
+    
     public override void OnDisconnected(DisconnectCause cause)
     {
         if (connectigUI != null) connectigUI.SetActive(false);
@@ -113,7 +139,7 @@ public class RoomManager : MonoBehaviourPunCallbacks
         if (LobbyManager.instance != null)
         {
             Debug.Log("LobbyManager encontrado. A mostrar sala de espera...");
-            LobbyManager.instance.OnRoomEntered();
+            LobbyManager.instance.OnRoomEntered(); 
         }
         else
         {
@@ -148,7 +174,6 @@ public class RoomManager : MonoBehaviourPunCallbacks
     }
 
     // --- SISTEMA DE MORTE E VIDAS (LOCAL) ---
-    // --- SISTEMA DE MORTE E VIDAS (LOCAL) ---
     public void HandleMyDeath()
     {
         Debug.Log("[RoomManager] HandleMyDeath chamado.");
@@ -159,11 +184,9 @@ public class RoomManager : MonoBehaviourPunCallbacks
             roomCam.SetActive(true);
         }
 
-        // --- CORREÇÃO AQUI ---
         // Garante que o menu de login e conexão desaparecem enquanto estás morto
         if (nameUI != null) nameUI.SetActive(false);
         if (connectigUI != null) connectigUI.SetActive(false);
-        // ---------------------
 
         int currentRespawns = GetRespawnCount(PhotonNetwork.LocalPlayer);
 
@@ -275,10 +298,10 @@ public class RoomManager : MonoBehaviourPunCallbacks
 
         Debug.Log($"[RoomManager] A fazer spawn de: {charName}");
 
-        // IMPORTANTE: O ficheiro 'charName' TEM de estar numa pasta chamada "Resources"
-        // Adicionei tratamento de erro aqui para não crashar silenciosamente
         try
         {
+            // O RPC para SetNickname será chamado no Start() do PlayerSetup, 
+            // usando o PhotonNetwork.LocalPlayer.NickName (que definimos no OnConnectedToMaster ou JoinRoomButtonPressed).
             GameObject _player = PhotonNetwork.Instantiate(charName, spawnPoint.position, Quaternion.identity);
 
             if (_player != null)
@@ -287,12 +310,6 @@ public class RoomManager : MonoBehaviourPunCallbacks
 
                 Health h = _player.GetComponent<Health>();
                 if (h != null) h.isLocalPlayer = true;
-
-                if (_player.GetComponent<PhotonView>() != null)
-                {
-                    _player.GetComponent<PhotonView>().RPC("SetNickname", RpcTarget.AllBuffered, nickName);
-                    PhotonNetwork.LocalPlayer.NickName = nickName;
-                }
             }
         }
         catch (System.Exception ex)
