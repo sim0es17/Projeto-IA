@@ -265,7 +265,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   walkSpeed: 5
   sprintSpeed: 8
-  jumpForce: 10
+  jumpForce: 6
   maxJumps: 2
   groundCheck: {fileID: 2370973604299485676}
   groundCheckRadius: 0.1
@@ -285,7 +285,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1cedd12176c538341825b93cdf05e3bf, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  damage: 10
+  damage: 15
   attackRange: 2
   attackCooldown: 0.5
   attackPoint: {fileID: 1155275024724574856}
@@ -296,7 +296,7 @@ MonoBehaviour:
   chargeTime: 1
   defenseCooldown: 2
   isDefending: 0
-  pvpKnockbackForce: 5
+  pvpKnockbackForce: 15
   pvpKnockbackDuration: 0.2
   hitVFX: {fileID: 0}
   defenseIcon: {fileID: 0}
@@ -388,8 +388,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2302b975a3bce964d8fcf4379b16b4e5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  maxHealth: 100
-  health: 100
+  maxHealth: 80
+  health: 90
   isLocalPlayer: 0
   healthBar: {fileID: 8421429996304016182}
   healthText: {fileID: 0}
