@@ -1,101 +1,147 @@
-# Projeto - IA: Documentação da Inteligência Artificial em ClashBound
+# Projeto – IA: Documentação da Inteligência Artificial em *ClashBound*
 
-Esta documentação aborda os conceitos de Inteligência Artificial (IA) e Pathfinding implementados no sistema de inimigos e nos power-ups do projeto, em concordância com os tópicos do Projeto Aplicado.
-Este Projeto foi desonvolvido por :
-Bento Simões - 27914,
-Hugo Oliveira - 27920,
-Ricardo Costa - 27927
+Esta documentação descreve em detalhe os sistemas de Inteligência Artificial (IA) implementados no projeto *ClashBound*, com foco no comportamento de inimigos, Pathfinding e lógica inteligente aplicada aos *power-ups*.  
+Projeto desenvolvido por: **Bento Simões – 27914**, **Hugo Oliveira – 27920**, **Ricardo Costa – 27927**.
+
+---
 
 ## 1. Máquina de Estados Finitos (FSM)
 
-A Máquina de Estados Finitos é o padrão de arquitetura comportamental mais comum e fundamental na vossa IA. Ela permite que os inimigos alternem entre um conjunto limitado de estados pré-definidos, garantindo que o comportamento seja previsível e controlado.
+A Máquina de Estados Finitos (FSM) é uma das arquiteturas mais utilizadas na IA para jogos, devido à sua simplicidade, previsibilidade e eficiência. Em *ClashBound*, este sistema controla o comportamento dos inimigos, permitindo que alternem entre estados bem definidos e que reajam ao contexto do jogo.
 
-### 1.1 Implementação no Código
+### 1.1 Justificação da FSM
 
-O FSM é implementado nos scripts EnemyAI.cs e EnemyAI_BFS.cs da seguinte forma:
+A escolha deste modelo garante:
 
-* **Definição de Estados:** É usado um `enum` público para definir os estados possíveis do inimigo:
-    ```csharp
-    public enum AIState
-    {
-        Idle,       // O inimigo está parado
-        Patrol,     // O inimigo está a patrulhar uma área
-        Chase,      // O inimigo está a perseguir um jogador
-        Attack,     // O inimigo está a executar o ataque
-        Stunned     // O inimigo foi atordoado e está inativo
-    }
-    ```
-* **Controlo de Estado:** O método Update() utiliza uma estrutura `switch (currentState)` para executar a função de handling correspondente a cada estado em cada frame.
-    ```csharp
-    switch (currentState)
-    {
-        case AIState.Patrol:
-            HandlePatrol();
-            break;
-        // ... (outros estados)
-    }
-    ```
-* **Transição de Estados:** As transições ocorrem através de condições lógicas dentro das funções de handling.
-    * Exemplo (Patrol $\rightarrow$ Chase): Se a função CanSeePlayer() retornar verdadeiro, o estado muda.
-    * Exemplo (Stunned $\rightarrow$ Chase): Esta transição é gerida por uma Corrotina (ResetStun) para reverter o estado após um período de tempo definido.
+- Baixo custo computacional e decisões rápidas.  
+- Fluxo lógico claro e fácil de depurar.  
+- Escalabilidade controlada para futuros novos estados.  
+- Comportamentos fiáveis e consistentes num ambiente *multiplayer*.
 
-### 1.2 Função no Contexto Multiplayer
+### 1.2 Implementação no Código
 
-A FSM é executada exclusivamente pelo Master Client (Host). Isto garante que a lógica de IA (decisão de movimento e ataque) é centralizada e autoritária, mantendo a sincronização entre todos os clientes.
+A FSM é definida num `enum` com estados como Idle, Patrol, Chase, Attack e Stunned.  
+Cada estado tem o seu método dedicado (ex.: `HandlePatrol()`), sendo chamado num `switch` dentro do método `Update()`.
 
-## 2. Pathfinding: Busca em Largura (BFS)
+As transições ocorrem quando determinadas condições são satisfeitas:
 
-O algoritmo *Breadth-First Search* (Busca em Largura) é usado no script EnemyAI_BFS.cs para permitir que o inimigo navegue em ambientes de plataforma complexos (contornando obstáculos e chegando a diferentes níveis de plataformas), calculando o caminho mais curto em número de nós.
+- Deteção do jogador (`CanSeePlayer()`).  
+- Distância ao alvo.  
+- Conclusão de animações.  
+- Temporizadores controlados por corrotinas (ex.: transição Stunned → Chase).
 
-### 2.1 Implementação do Algoritmo
+Esta separação garante modularidade e reduz risco de conflitos entre estados.
 
-A implementação do BFS envolve três etapas principais:
+### 1.3 FSM em Ambiente Multiplayer
 
-#### A. O Algoritmo de Busca (`RunBFS`)
+Toda a IA é executada exclusivamente no **Master Client**, garantindo:
 
-O método `RunBFS` é o núcleo do Pathfinding:
+- Autoridade centralizada das decisões.  
+- Sincronização precisa entre todos os jogadores.  
+- Menor carga na rede ao transmitir apenas posições e estados, não cálculos.
 
-* **Grelha Virtual:** As posições do mundo (`Vector2`) são convertidas em coordenadas de grelha (`Vector2Int`) usando a `cellSize`.
-* **Estruturas de Dados:**
-    * `Queue<Vector2Int> frontier`: A fila FIFO (First-In, First-Out) é usada para explorar os nós vizinhos sequencialmente, garantindo que o BFS encontre o caminho com o menor número de passos.
-    * `Dictionary<Vector2Int, Vector2Int> cameFrom`: Usado para rastrear o caminho. Cada entrada regista de qual nó anterior o inimigo veio para chegar ao nó atual.
-* **Verificação de Obstáculos (`GetNeighbors`):** O método verifica os vizinhos (Cima, Baixo, Esquerda, Direita). Para determinar se um nó é válido, é usada a `Physics2D.OverlapCircle` para garantir que o centro da célula não está a colidir com a `obstacleLayer`.
-* **Limite de Busca:** A variável `maxSearchSteps` atua como uma salvaguarda para evitar loops infinitos e proteger o desempenho, interrompendo a busca se o caminho for muito longo ou inacessível.
+---
 
-#### B. Reconstrução do Caminho (`ReconstructPath`)
+## 2. Pathfinding – Algoritmo BFS
 
-Se o BFS for bem-sucedido, o `ReconstructPath` usa o dicionário `cameFrom` para traçar o caminho do nó final até ao nó inicial. O caminho é então armazenado numa lista (`currentPath`) e invertido para ser seguido na ordem correta.
+O Pathfinding é a tecnologia que permite que os inimigos naveguem por cenários com plataformas, buracos, diferentes alturas e obstáculos. Em *ClashBound*, foi usado o algoritmo **Breadth-First Search (BFS)** para encontrar o caminho mais curto em grelhas uniformes.
 
-#### C. Lógica de Movimento (`HandleChaseBFS` e `MoveTowardsNode`)
+### 2.1 Porque foi escolhido o BFS?
 
-* **Recalculo:** O `HandleChaseBFS` executa o `RunBFS` periodicamente, controlado pela variável `pathUpdateRate` (tempo entre recalculos).
-* **Seguimento:** O inimigo move-se sequencialmente para o próximo ponto na lista `currentPath`.
-* **Salto:** A função `MoveTowardsNode` inclui lógica para detetar se o próximo nó está numa plataforma superior (verificando `targetPos.y > transform.position.y + 0.5f`) e aplica a `jumpForce` se o inimigo estiver no chão.
+- Garante caminhos óptimos em menor número de passos.  
+- Funciona muito bem em grelhas uniformes, comuns em plataformas 2D.  
+- É mais leve que algoritmos como A*, ideal para *multiplayer*.  
+- Tem implementação simples e alta estabilidade.
 
-## 3. Lógica de Decisão: Smart Power-Up
+### 2.2 Estrutura da Grelha
 
-Embora o conceito formal de *Decision Tree* (Árvore de Decisão) não esteja implementado, o script SmartPowerUp.cs codifica uma lógica de decisão baseada em prioridades e contexto, imitando a função de um sistema inteligente: otimizar o resultado para o jogador.
+O mapa é discretizado numa grelha virtual, convertendo coordenadas do mundo (`Vector2`) em coordenadas inteiras (`Vector2Int`) através de um `cellSize`.  
+Isto simplifica:
 
-### 3.1 Priorização Contextual
+- Verificação de obstáculos.  
+- Cálculo de vizinhos.  
+- Redução de ruído físico.
 
-O método `DecideEffect` decide o tipo de *power-up* a aplicar (Heal, DamageBoost, SpeedBoost) seguindo uma hierarquia de prioridades:
+Cada célula pode ser livre, bloqueada ou acessível mediante salto.
 
-* **Sobrevivência (Heal):** Se a percentagem de vida do jogador for inferior ao `lowHealthThreshold` (ex: 30% ou 0.3f), a decisão é Cura total, independentemente do contexto.
-* **Agressão (DamageBoost):** Se a sobrevivência não for crítica, verifica-se a proximidade de inimigos usando `IsEnemyNearby()` e um raio definido (`enemyCheckRadius`). Se houver inimigos, o aumento de Dano é priorizado para combater a ameaça imediata.
-* **Exploração (SpeedBoost):** Se a sobrevivência não for crítica e não houver inimigos próximos, o SpeedBoost é aplicado, otimizando o tempo de viagem e a exploração do mapa.
+### 2.3 Implementação do BFS
 
-### 3.2 Implementação da Lógica
+O método principal, `RunBFS`, utiliza:
 
-* **Contexto de Vida:** Calculado com `(float)playerHealth.health / playerHealth.maxHealth`.
-* **Contexto de Perigo (`IsEnemyNearby`):** Utiliza `Physics2D.OverlapCircle` com um raio (`enemyCheckRadius`) para verificar colisões dentro da Layer dos inimigos.
-* **Rotinas de Buff:** Os *buffs* temporários (DamageBoost) são geridos por Corrotinas (`IEnumerator`) para aplicar o efeito, esperar pela `damageDuration` e, em seguida, reverter o dano para o valor original antes de destruir o objeto.
+- `Queue<Vector2Int> frontier` — fila FIFO para explorar nós.  
+- `Dictionary<Vector2Int, Vector2Int> cameFrom` — registo do caminho.  
+- `Physics2D.OverlapCircle` — deteção de colisões em cada célula.  
+- `maxSearchSteps` — limite de segurança para evitar sobrecarga.
+
+O sistema previne ciclos, apenas adiciona vizinhos válidos e interrompe a busca se o alvo for inacessível ou demasiado distante.
+
+### 2.4 Reconstrução e Movimento
+
+Quando a busca termina com sucesso:
+
+- O caminho é reconstruído de trás para a frente e invertido.  
+- Cada nó é seguido sequencialmente por `MoveTowardsNode`.  
+- O inimigo salta automaticamente se o próximo nó for mais alto.  
+- O recalculo é periódico (`pathUpdateRate`) para equilibrar precisão e desempenho.
+
+Este método cria uma navegação fluida e inteligente, muito superior a movimentos lineares.
+
+---
+
+## 3. Lógica Inteligente – *Smart Power-Up*
+
+O sistema Smart Power-Up aplica um efeito específico baseado no estado do jogador e no contexto à sua volta. Embora não utilize uma Árvore de Decisão formal, funciona como uma mini-estrutura hierárquica de prioridades.
+
+### 3.1 Hierarquia de Decisão
+
+A ordem das decisões é:
+
+1. **Cura (Heal)** — se a vida for inferior ao `lowHealthThreshold` (ex.: 30%).  
+2. **Aumento de Dano (DamageBoost)** — se existirem inimigos próximos (`IsEnemyNearby()`).  
+3. **Velocidade (SpeedBoost)** — se não houver perigo nem urgência de sobrevivência.
+
+Esta abordagem melhora a experiência de jogo, oferecendo efeitos úteis conforme a situação.
+
+### 3.2 Detalhes de Implementação
+
+- A percentagem de vida é calculada dinamicamente.  
+- A presença de inimigos é verificada com `Physics2D.OverlapCircle`.  
+- Buffs são temporários, funcionando com corrotinas para aplicar, esperar e restaurar valores originais.  
+- O objeto destrói-se após cumprir o seu propósito, evitando acumulação desnecessária no jogo.
+
+---
+
+## 4. Considerações de Desempenho
+
+Para garantir estabilidade e fluidez, foram tomadas várias medidas:
+
+- Execução da IA apenas no Master Client.  
+- Limitação do número de passos do BFS.  
+- Uso de layers específicas para colisões.  
+- Métodos de movimentação simples e de baixo custo.  
+- Separação entre lógica e animações.
+
+---
+
+## 5. Melhorias Futuras Possíveis
+
+Há várias direções de evolução natural:
+
+- Implementação de Behaviour Trees para comportamentos mais complexos.  
+- Substituição do BFS por A* em mapas maiores.  
+- Sistema de perceção auditiva.  
+- Coordenação entre inimigos.  
+- Smart Power-Ups adaptativos baseados no estilo de jogo do utilizador.  
+- Inimigos com memória curta (última posição vista do jogador).
+
+---
 
 ## Conclusão
 
-O projeto ClashBound demonstra uma implementação bem-sucedida de conceitos cruciais de Inteligência Artificial para jogos *multiplayer*.
+A IA de *ClashBound* demonstra uma implementação sólida dos pilares fundamentais da Inteligência Artificial em jogos:
 
-A escolha de arquiteturas reflete uma compreensão clara dos requisitos do motor e da rede:
+- A **FSM** estrutura e organiza o comportamento dos inimigos.  
+- O **BFS** permite navegação inteligente em plataformas.  
+- O **Smart Power-Up** adapta-se ao contexto para melhorar a experiência do jogador.
 
-* **Robustez Comportamental:** A utilização da **Máquina de Estados Finitos (FSM)** fornece um *framework* de comportamento claro e fiável para os inimigos, sendo o padrão da indústria.
-* **Navegação Avançada:** A implementação do algoritmo **BFS (Pathfinding)** demonstra a capacidade da IA de planear caminhos e navegar em ambientes complexos de plataforma, indo além da simples perseguição em linha reta.
-* **IA Aplicada à UX:** O **Smart Power-up** é um excelente exemplo de IA focada na *User Experience* (UX), onde o ambiente e o estado do jogador ditam o efeito de jogo, tornando a jogabilidade mais dinâmica e estratégica.
+O resultado é um sistema fiável, eficiente e totalmente adaptado ao ambiente *multiplayer*, oferecendo uma jogabilidade mais dinâmica, equilibrada e envolvente.
