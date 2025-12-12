@@ -1,4 +1,4 @@
-# 🤖 Projeto - IA: Documentação da Inteligência Artificial em ClashBound
+# Projeto - IA: Documentação da Inteligência Artificial em ClashBound
 
 Esta documentação aborda os conceitos de Inteligência Artificial (IA) e Pathfinding implementados no sistema de inimigos e nos power-ups do projeto, em concordância com os tópicos do Projeto Aplicado.
 
